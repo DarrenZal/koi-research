@@ -131,8 +131,21 @@ Key behaviors:
 **BGE Server (koi-processor)**:
 - Generate semantic embeddings (port 8090)
 - BAAI/bge-large-en-v1.5 model (1024 dimensions)
+- Provides OpenAI text-embedding-3-large compatible API
 - Model-agnostic API design
 - Batch processing support
+
+**Hybrid RAG API (koi-processor)**:
+- Semantic search combining RRF, BGE embeddings, and adaptive extraction (port 8301)
+- Express/Bun server providing `/api/koi/query` endpoint
+- Enables semantic similarity ranking with proper relevance scores
+- Requires BGE server for embeddings
+
+**MCP Knowledge Server (koi-processor)**:
+- FastAPI server providing MCP-compatible knowledge access (port 8200)
+- Endpoint: `/search` for semantic queries
+- Routes to Hybrid RAG API when available
+- Falls back to text/date search when RAG unavailable
 
 **PostgreSQL (koi-processor)**:
 - Primary data store (port 5433)
@@ -142,7 +155,7 @@ Key behaviors:
 - Full-text search with GIN indexes
 
 **Dashboard (koi-processor)**:
-- Real-time sensor status monitoring
+- Real-time sensor status monitoring (port 8400)
 - Content operations interface
 - Daily curator and weekly digest management
 - Podcast generation workflow
@@ -150,8 +163,8 @@ Key behaviors:
 **Agents (GAIA)**:
 - ElizaOS-based AI agents
 - Direct PostgreSQL queries for RAG
-- MCP integration for external tools
-- Real-time knowledge access
+- MCP integration for knowledge access
+- Real-time knowledge with semantic search
 
 ---
 
@@ -273,7 +286,7 @@ koi-research/
 
 Purpose: MCP server exposing hybrid knowledge access (adaptive NL→SPARQL over Apache Jena + vector search) with result fusion and tools.
 
-Location: [https://github.com/gaiaaiagent/regen-koi-mcp/tree/main](https://github.com/gaiaaiagent/regen-koi-mcp/tree/main)
+Location: [https://github.com/regen-network/regen-koi-mcp](https://github.com/regen-network/regen-koi-mcp)
 
 Key Features:
 - Adaptive dual‑branch NL→SPARQL (focused + broad) with canonical‑aware filtering and smart fallback
@@ -1028,10 +1041,25 @@ OPENAI_API_KEY=sk-...
 |---------|------|----------|---------|
 | KOI Coordinator | 8005 | HTTP | Event routing |
 | Event Bridge v2 | 8100 | HTTP | Event processing |
-| BGE Server | 8090 | HTTP | Embedding generation |
+| BGE Server | 8090 | HTTP | Embedding generation (OpenAI-compatible API) |
+| MCP Knowledge Server | 8200 | HTTP | FastAPI knowledge access endpoint |
+| Hybrid RAG API | 8301 | HTTP | Semantic search with RRF + BGE |
 | Dashboard | 8400 | HTTP | Monitoring UI |
 | PostgreSQL | 5433 | PostgreSQL | Database |
-| Apache Jena (future) | 3030 | HTTP | SPARQL endpoint |
+| Apache Jena Fuseki | 3030 | HTTP | SPARQL endpoint |
+
+**Startup Commands:**
+```bash
+# MCP Knowledge Server (port 8200)
+cd /opt/projects/koi-processor && source venv/bin/activate && \
+python3 src/core/koi_knowledge_mcp_server.py &
+
+# Hybrid RAG API (port 8301) - Required for semantic search
+cd /opt/projects/koi-processor && bun koi-query-api.ts &
+
+# BGE Embedding Server (port 8090) - Auto-started, check with:
+curl http://localhost:8090/health
+```
 
 ---
 
@@ -1303,6 +1331,6 @@ The KOI system represents a comprehensive knowledge management infrastructure th
 
 ---
 
-**Document Version**: 3.0
-**Last Updated**: October 10, 2025
+**Document Version**: 3.1
+**Last Updated**: October 17, 2025
 **Maintained By**: Regen Network AI Team
