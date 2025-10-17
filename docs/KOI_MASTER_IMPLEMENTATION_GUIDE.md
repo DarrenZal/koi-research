@@ -24,6 +24,7 @@ The Knowledge Organization Infrastructure (KOI) is a production-ready distribute
 
 **Hybrid Search Quality**:
 - Evaluation harness (20 queries): 100% answered, 0% noise (Lingui/i18n eliminated), ~1.5 s avg latency (cold start ~19 s)
+ - Date filtering: supports explicit ranges and natural‑language recency; optional inclusion of undated docs
 
 **Architecture Progress**: Core pipeline + hybrid graph search operational; ongoing tuning (multi‑category gating, warm‑up, provenance filters)
 
@@ -277,7 +278,10 @@ Location: [https://github.com/gaiaaiagent/regen-koi-mcp/tree/main](https://githu
 Key Features:
 - Adaptive dual‑branch NL→SPARQL (focused + broad) with canonical‑aware filtering and smart fallback
 - Parallel SPARQL + vector execution with Reciprocal Rank Fusion (RRF)
-- Tools: `query_graph`, `search_knowledge`, `get_system_health`, `predicate_community_summary`, `canonical_summary`
+- Minimal tool surface (MCP): `search_knowledge`, `get_stats`
+  - `search_knowledge` supports `published_from` / `published_to` (YYYY‑MM‑DD) and `include_undated`
+  - Recency phrases (e.g., “past week”, “last 30 days”, “yesterday”, “since YYYY‑MM‑DD”) are auto‑parsed when no explicit dates are provided
+  - Vector/keyword branches always respect date filters; SPARQL branch applies date gates when RDF includes `regx:publishedAt`
 - Evaluation harness persisting JSON metrics (`scripts/eval-nl2sparql.js`)
 
 Configuration (env):
@@ -827,7 +831,9 @@ Behavior:
 - Focused + broad SPARQL branches run in parallel
 - Canonical‑aware category filter by default; smart fallback drops canonical only when zero results
 - Vector branch runs in parallel; RRF fuses results
-- Tools: `query_graph`, `search_knowledge`, `predicate_community_summary`, `canonical_summary`
+- Date filters: vector/keyword branches apply `published_from`/`published_to` (and optional `include_undated`)
+- SPARQL date gating: when RDF statements include `regx:publishedAt`, the NL→SPARQL builder adds an OPTIONAL `?stmt regx:publishedAt` + FILTER on the requested range
+- Tools: `search_knowledge`, `get_stats`
 
 Evaluation (20 queries): 100% answered, 0% noise, ~1.5 s avg; cold start ~19 s
 
