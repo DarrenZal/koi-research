@@ -29,43 +29,98 @@
 
 ## Executive Summary
 
-Our system implements a sophisticated hybrid approach to Retrieval-Augmented Generation (RAG) that combines traditional vector similarity search with structured knowledge graph queries. This dual-path architecture enables both semantic understanding through embeddings and precise ontological reasoning through RDF triples, providing AI agents with comprehensive knowledge access capabilities.
+Our system implements a sophisticated hybrid approach to Retrieval-Augmented Generation (RAG) that combines three complementary knowledge representations: vector similarity search, structured knowledge graphs, and code entity graphs. This triple-path architecture enables semantic understanding through embeddings, ontological reasoning through RDF triples, and code-level navigation through AST-extracted entity graphs, providing AI agents with comprehensive knowledge access across documentation, community discussions, and source code.
 
 ## System Overview
 
 ### Core Philosophy
 The architecture is designed around the concept of "living systems" - treating knowledge as a metabolic process where information flows, transforms, and evolves through various stages. This biomimetic approach aligns with Regen Network's regenerative principles, creating a knowledge ecosystem that grows and adapts organically.
 
-### Key Innovation: Dual Knowledge Representation
-Unlike traditional RAG systems that rely solely on vector embeddings, our architecture maintains knowledge in two complementary forms:
-1. **Vector Embeddings** - For semantic similarity and contextual understanding
-2. **RDF Knowledge Graph** - For structured relationships and ontological reasoning
+### Key Innovation: Triple Knowledge Representation
+Unlike traditional RAG systems that rely solely on vector embeddings, our architecture maintains knowledge in **three complementary forms**:
+
+1. **Vector Embeddings (Layer 1)** - For semantic similarity and contextual understanding
+   - 15,000+ documents from 12 platforms (GitHub, Discourse, Medium, Telegram, etc.)
+   - OpenAI text-embedding-3-large (1024-dimensional vectors)
+   - Stored in PostgreSQL with pgvector extension
+
+2. **RDF Knowledge Graph (Layer 2)** - For structured relationships and ontological reasoning
+   - 101,903 RDF triples with canonical categories
+   - Apache Jena Fuseki triplestore with SPARQL queries
+   - OWL ontology reasoning capabilities
+
+3. **Code Entity Graph (Layer 3)** - For code navigation and impact analysis
+   - 26,768 code entities extracted via tree-sitter AST parsing
+   - 11,331 CALLS edges mapping function relationships
+   - Apache AGE graph database with Cypher queries
 
 ## Architecture Components
 
 ### Data Ingestion Pipeline
 
+**Three Knowledge Layers:** The system maintains knowledge in three complementary forms for comprehensive understanding.
+
 ```
-┌─────────────┐     ┌──────────────┐     ┌──────────────┐
-│ KOI Sensors │────▶│ Coordinator  │────▶│ Event Bridge │
-│  (Various)  │     │  (Port 8200) │     │  (Port 8100) │
-└─────────────┘     └──────────────┘     └──────────────┘
-                                                 │
-                                 ┌───────────────┴───────────────┐
-                                 │                               │
-                                 ▼                               ▼
-                         ┌──────────────┐            ┌──────────────────┐
-                         │  Embedding   │            │ Entity Extractor │
-                         │   Server     │            │  (LLM + Ontology)│
-                         │  (Port 8090) │            │                  │
-                         └──────────────┘            └──────────────────┘
-                                 │                               │
-                                 ▼                               ▼
-                         ┌──────────────┐            ┌──────────────────┐
-                         │ PostgreSQL   │            │  Apache Jena     │
-                         │  (pgvector)  │            │    Fuseki        │
-                         │              │            │  (Port 3030)     │
-                         └──────────────┘            └──────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│              KOI SENSORS (12 platforms)                 │
+│  GitHub, GitLab, Medium, Discourse, Telegram, Discord,  │
+│  Twitter, Podcast, Notion, Ledger, Websites             │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓ KOI Events
+┌─────────────────────────────────────────────────────────┐
+│           COORDINATOR + EVENT BRIDGE v2                 │
+│  Deduplication, versioning, chunking, CAT receipts      │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+        ┌──────────────┴──────────────┬──────────────┐
+        │                             │              │
+        ↓                             ↓              ↓
+┌──────────────┐          ┌───────────────────┐  ┌────────────┐
+│  OpenAI API  │          │  Entity Extractor │  │ Tree-sitter│
+│  Embeddings  │          │  (LLM + Ontology) │  │ AST Parser │
+│  (Port 8090) │          │                   │  │ (Go Code)  │
+└──────┬───────┘          └─────────┬─────────┘  └─────┬──────┘
+       │                            │                   │
+       ↓                            ↓                   ↓
+┌─────────────────────────────────────────────────────────────┐
+│              POSTGRESQL (Port 5433)                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────────────┐      ┌───────────────────────┐   │
+│  │ pgvector             │      │ Apache AGE            │   │
+│  │ ─────────            │      │ ──────────            │   │
+│  │ koi_memories         │      │ Graph: regen_graph_v2 │   │
+│  │ koi_embeddings       │      │                       │   │
+│  │                      │      │ 26,768 code entities  │   │
+│  │ 15,000+ documents    │      │ 11,331 CALLS edges    │   │
+│  │ OpenAI vectors       │      │                       │   │
+│  │ 1024-dimensional     │      │ Cypher queries        │   │
+│  └──────────────────────┘      └───────────────────────┘   │
+│                                                             │
+│  LAYER 1: Document Vectors     LAYER 3: Code Graph         │
+│  (semantic search)             (code navigation)           │
+└─────────────────────────────────────────────────────────────┘
+       │
+       ↓
+┌─────────────────────────────────────────────────────────┐
+│        APACHE JENA FUSEKI (Port 3030)                   │
+│  ─────────────────────────────────────                  │
+│  101,903 RDF triples                                    │
+│  SPARQL queries, canonical categories                   │
+│  Semantic reasoning                                     │
+│                                                         │
+│  LAYER 2: RDF Knowledge Graph                           │
+│  (ontological reasoning)                                │
+└─────────────────────────────────────────────────────────┘
+       │
+       ↓
+┌─────────────────────────────────────────────────────────┐
+│           MCP SERVER (regen-koi-mcp v1.1.0)             │
+│  ─────────────────────────────────────────              │
+│  Query Router → Apache AGE + Apache Jena + pgvector     │
+│  RRF Fusion, Caching, Metrics                           │
+│  9 MCP Tools for AI Agents                              │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ### 1. KOI Sensors Network
@@ -165,7 +220,12 @@ The system converts extracted entities into RDF triples:
 
 ### 4. Storage Layer
 
+The storage layer consists of **three knowledge representations** hosted across two database systems:
+
 #### PostgreSQL Database (Port 5433)
+
+**Layer 1: pgvector Extension (Document Vectors)**
+
 Dual-table architecture for optimal performance:
 
 **koi_memories Table:**
@@ -173,22 +233,53 @@ Dual-table architecture for optimal performance:
 - Maintains version history
 - Tracks source sensors and metadata
 - Ensures deduplication at document level
+- 15,000+ documents from 12 platforms
 
-**memories Table:**
-- Stores chunked content for RAG
+**koi_embeddings Table:**
+- OpenAI text-embedding-3-large vectors (1024-dimensional)
+- Cosine similarity search for semantic retrieval
+- Supports fast k-nearest neighbor queries
 - Links to agent access permissions
-- Optimized for retrieval operations
 - Contains 40,000+ searchable chunks
 
+**Layer 3: Apache AGE Extension (Code Graph)**
+
+Graph database for code understanding:
+
+**regen_graph_v2 Graph:**
+- 26,768 code entities (Functions, Structs, Interfaces, Methods, Imports)
+- 11,331 CALLS edges mapping function call relationships
+- 10 domain Concepts with EXPLAINS edges to code
+- Tree-sitter AST extraction from Go source
+- Cypher query language support
+- Enables call graph traversal, impact analysis, orphan detection
+
+**Code Entity Types:**
+- Methods: 19,884
+- Imports: 3,363
+- Functions: 1,693
+- Structs: 1,636
+- Interfaces: 192
+- Concepts: 10
+
 #### Apache Jena Fuseki (Port 3030)
-SPARQL triplestore for knowledge graph:
+
+**Layer 2: RDF Triplestore (Knowledge Graph)**
+
+SPARQL triplestore for ontological reasoning:
 
 **Features:**
-- Stores 3,900+ RDF triples
+- Stores 101,903 RDF triples
+- 20,325 refined statements with canonical categories
 - OWL ontology reasoning capabilities
 - SPARQL 1.1 query support
 - Persistent TDB2 storage
 - RESTful HTTP interface
+
+**Canonical Categories:**
+- eco_credit, finance, funding, governance
+- water, creation, leadership, collaboration
+- location, general
 
 **Dataset Structure:**
 ```
@@ -201,34 +292,73 @@ SPARQL triplestore for knowledge graph:
 
 ### 5. Query & Access Layer
 
-#### Knowledge MCP Server
-Provides unified access to both knowledge representations:
+#### Regen KOI MCP Server v1.1.0
+
+**Location:** [regen-koi-mcp](https://github.com/gaiaaiagent/regen-koi-mcp)
+**NPM Package:** `regen-koi-mcp@1.1.0`
+**Status:** Phase 7 Production Ready (November 2025)
+
+Provides unified access to all three knowledge representations:
+
+**9 MCP Tools:**
+1. **query_code_graph** - Apache AGE Cypher queries (15+ query types)
+2. **hybrid_search** - Intelligent routing between vector and graph
+3. **search_knowledge** - Semantic search with date filters
+4. **search_github_docs** - Documentation across 4 repositories
+5. **get_repo_overview** - Repository structure and key files
+6. **get_tech_stack** - Technology stack breakdown
+7. **get_stats** - Knowledge base statistics
+8. **generate_weekly_digest** - Weekly activity summaries
+9. **get_mcp_metrics** - Production metrics and health
 
 **Hybrid Query Capabilities:**
-1. **Semantic Search** → Routes to PostgreSQL pgvector
-2. **Ontological Query** → Routes to Apache Jena Fuseki
-3. **Hybrid Query** → Combines results from both systems
+1. **Semantic Search** → Routes to PostgreSQL pgvector (Layer 1)
+2. **Code Graph Query** → Routes to PostgreSQL Apache AGE (Layer 3)
+3. **Ontological Query** → Routes to Apache Jena Fuseki (Layer 2)
+4. **Hybrid Query** → Combines results from all three systems via RRF fusion
+
+**Phase 7 Production Features:**
+- Exponential backoff retry (3 attempts)
+- Circuit breaker pattern
+- 4-tier LRU caching (static/semi-static/dynamic/volatile)
+- Zod schema validation
+- Structured logging (pino)
+- Metrics tracking (p50/p95/p99 latencies)
+- Cache hit/miss rates
+- SQL/Cypher injection detection
 
 **Query Examples:**
 ```javascript
-// Semantic search
+// Code graph query (Apache AGE)
 {
-  "tool": "bge_search",
+  "tool": "query_code_graph",
+  "query_type": "search_entities",
+  "entity_name": "MsgCreateBatch",
+  "repo_name": "regen-ledger"
+}
+
+// Semantic document search (pgvector)
+{
+  "tool": "search_knowledge",
   "query": "regenerative agriculture practices",
-  "top_k": 10
+  "limit": 10
 }
 
-// SPARQL query
-{
-  "tool": "sparql_query",
-  "query": "SELECT ?project WHERE { ?project regen:implements ?practice . ?practice rdf:type regen:RegenerativePractice }"
-}
-
-// Hybrid query (combines both)
+// Intelligent hybrid search (auto-routing)
 {
   "tool": "hybrid_search",
-  "semantic_query": "carbon sequestration",
-  "ontological_filter": "?entity rdf:type regen:CarbonProject"
+  "query": "How does credit retirement work?",
+  "limit": 10
+}
+// → Routes to code graph for "retirement" code entities
+// → Also searches documentation and RDF triples
+// → Combines via RRF fusion
+
+// Call graph traversal (Apache AGE)
+{
+  "tool": "query_code_graph",
+  "query_type": "find_callers",
+  "entity_name": "Retire"
 }
 ```
 
@@ -257,22 +387,26 @@ User Query
     ▼
 Query Analysis
     ├─► Semantic Intent Extraction
-    └─► Entity Recognition
+    ├─► Entity Recognition
+    └─► Query Type Classification
               │
               ▼
-        Query Router
-        ├─► Vector Search (if semantic)
-        ├─► SPARQL Query (if structured)
-        └─► Hybrid Query (if both)
+    MCP Server Query Router
+        ├─► Vector Search (Layer 1: Documents)
+        ├─► SPARQL Query (Layer 2: RDF Graph)
+        ├─► Cypher Query (Layer 3: Code Graph)
+        └─► Hybrid Query (All 3 layers)
               │
               ▼
-        Result Fusion
+    Result Fusion (RRF)
         ├─► Rank by relevance
+        ├─► Deduplicate results
         ├─► Apply permissions
         └─► Format response
               │
               ▼
         Agent Response
+        (Comprehensive: Code + Docs + Community)
 ```
 
 ### Semantic Search Pipeline
@@ -321,18 +455,53 @@ Query Analysis
 
 ### Result Fusion Strategy
 
-**Scoring Algorithm:**
+**Reciprocal Rank Fusion (RRF):**
+
+The MCP server uses RRF to combine results from all three knowledge layers:
+
 ```python
-def fusion_score(semantic_score, graph_score, query_type):
-    if query_type == "factual":
-        # Prioritize knowledge graph
-        return 0.3 * semantic_score + 0.7 * graph_score
-    elif query_type == "exploratory":
-        # Prioritize semantic search
-        return 0.7 * semantic_score + 0.3 * graph_score
+def reciprocal_rank_fusion(results_by_layer, k=60):
+    """
+    Combine results from 3 layers using RRF.
+
+    Args:
+        results_by_layer: {
+            'vector': [(doc_id, score), ...],    # Layer 1
+            'rdf': [(doc_id, score), ...],       # Layer 2
+            'code': [(entity_id, score), ...]    # Layer 3
+        }
+        k: RRF constant (default 60)
+
+    Returns:
+        Combined ranking with RRF scores
+    """
+    combined_scores = {}
+
+    for layer, results in results_by_layer.items():
+        for rank, (item_id, _) in enumerate(results, 1):
+            score = 1.0 / (k + rank)
+            combined_scores[item_id] = combined_scores.get(item_id, 0) + score
+
+    return sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)
+```
+
+**Query Type Routing:**
+
+```python
+def route_query(query, query_type):
+    """Intelligent routing based on query characteristics"""
+    if "function" in query or "code" in query:
+        # Code-focused: prioritize Layer 3 (Code Graph)
+        return query_code_graph(query)
+    elif "governance" in query or "proposal" in query:
+        # Ontological: prioritize Layer 2 (RDF Graph)
+        return query_rdf_graph(query)
+    elif is_semantic_question(query):
+        # Exploratory: prioritize Layer 1 (Vector Search)
+        return query_vector_search(query)
     else:
-        # Balanced approach
-        return 0.5 * semantic_score + 0.5 * graph_score
+        # Comprehensive: query all 3 layers with RRF fusion
+        return hybrid_search(query)
 ```
 
 ## Ontology Design
@@ -411,11 +580,11 @@ Services:
 
   postgresql:
     port: 5433
-    role: Vector storage & agent data
+    role: Vector storage (pgvector) + Code graph (Apache AGE)
 
-  mcp-knowledge-server:
-    port: 8200
-    role: Unified knowledge API
+  mcp-server:
+    package: regen-koi-mcp@1.1.0
+    role: Unified knowledge API (9 MCP tools)
 ```
 
 ### Monitoring & Observability
@@ -450,11 +619,18 @@ Services:
 
 ## Conclusion
 
-This hybrid RAG and knowledge graph architecture represents a significant advancement in AI knowledge systems. By combining the semantic understanding of vector embeddings with the structured reasoning of knowledge graphs, we create a system that can handle both exploratory questions requiring contextual understanding and precise queries demanding factual accuracy.
+This triple-layer hybrid RAG architecture represents a significant advancement in AI knowledge systems. By combining **three complementary knowledge representations** - semantic vector embeddings, structured RDF knowledge graphs, and code entity graphs - we create a system that can handle exploratory questions, precise ontological queries, and code-level navigation simultaneously.
+
+**The Three Layers:**
+1. **Layer 1 (pgvector)**: Semantic understanding across 15,000+ documents from 12 platforms
+2. **Layer 2 (Apache Jena)**: Ontological reasoning with 101,903 RDF triples
+3. **Layer 3 (Apache AGE)**: Code navigation with 26,768 entities and 11,331 call edges
 
 The biomimetic design philosophy, treating knowledge as a living system with metabolic flows and transformations, aligns perfectly with Regen Network's mission of regenerative systems. This architecture not only serves current needs but is designed to evolve and adapt, growing more capable and comprehensive over time.
 
-Through careful integration of cutting-edge technologies - from distributed sensors to advanced embedding models, from RDF reasoning to hybrid query processing - we've built a knowledge infrastructure that empowers AI agents to engage meaningfully with complex regenerative concepts and support the transition to a more sustainable future.
+Through careful integration of cutting-edge technologies - from distributed sensors to OpenAI embeddings, from RDF reasoning to tree-sitter AST parsing, from SPARQL to Cypher queries - we've built a knowledge infrastructure that empowers AI agents to engage meaningfully with complex regenerative concepts at every level: community discussions, ontological relationships, and source code implementation.
+
+**Access via MCP Server v1.1.0**: All three knowledge layers are unified behind a production-ready Model Context Protocol server with 9 tools, RRF fusion, and Phase 7 hardening (retry logic, circuit breakers, caching, validation). Available as `regen-koi-mcp@1.1.0` on npm.
 ---
 
 ## Implementation Updates (September 30, 2025)
@@ -926,75 +1102,6 @@ RRF Fusion → Combined Results
 - Cache hit rate: Target > 50%
 - Success rate: 100%
 - Circuit breaker trips: 0 (healthy)
-
-### Updated Architecture Diagram
-
-**Complete Hybrid RAG + Code Graph:**
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    SENSORS (12 platforms)               │
-│  GitHub, GitLab, Medium, Discourse, Telegram, Discord,  │
-│  Twitter, Podcast, Notion, Ledger, Websites             │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓ KOI Events
-┌─────────────────────────────────────────────────────────┐
-│              COORDINATOR + EVENT BRIDGE v2              │
-│  Deduplication, versioning, chunking, CAT receipts      │
-└──────────────────────┬──────────────────────────────────┘
-                       ↓
-            ┌──────────┴──────────┐
-            ↓                     ↓
-    ┌───────────────┐     ┌───────────────┐
-    │  BGE Server   │     │  Tree-sitter  │
-    │  (8090)       │     │  Code Parser  │
-    │  OpenAI API   │     │               │
-    └───────┬───────┘     └───────┬───────┘
-            │                     │
-            ↓                     ↓
-┌─────────────────────────────────────────────────────────┐
-│           POSTGRESQL (Port 5433)                        │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ┌──────────────────┐    ┌──────────────────┐         │
-│  │ koi_memories +   │    │ Apache AGE       │         │
-│  │ koi_embeddings   │    │ Graph            │         │
-│  │                  │    │                  │         │
-│  │ 15,000+ docs     │    │ regen_graph_v2   │         │
-│  │ OpenAI vectors   │    │ 26,768 entities  │         │
-│  │ 1024-dim         │    │ 11,331 edges     │         │
-│  └──────────────────┘    └──────────────────┘         │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-                       │
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│        APACHE JENA FUSEKI (Port 3030)                   │
-│  - 101,903 RDF triples                                  │
-│  - SPARQL queries, canonical categories                 │
-└─────────────────────────────────────────────────────────┘
-                       │
-                       ↓
-┌─────────────────────────────────────────────────────────┐
-│           MCP SERVER (regen-koi-mcp v1.1.0)             │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ Query Router                                    │   │
-│  │  ├─ Apache AGE (Cypher) ──→ Code entities      │   │
-│  │  ├─ Apache Jena (SPARQL) ──→ RDF triples       │   │
-│  │  └─ pgvector (Cosine) ──→ Document vectors     │   │
-│  └───────────────────┬─────────────────────────────┘   │
-│                      ↓                                  │
-│           RRF Fusion + Caching + Metrics                │
-│                      ↓                                  │
-│                  9 MCP Tools                            │
-└─────────────────────┬───────────────────────────────────┘
-                      ↓
-┌─────────────────────────────────────────────────────────┐
-│              AI AGENTS (Claude, ElizaOS)                │
-│  - Comprehensive knowledge access                       │
-│  - Code + Docs + Community content                      │
-└─────────────────────────────────────────────────────────┘
-```
 
 ### Performance Impact
 
