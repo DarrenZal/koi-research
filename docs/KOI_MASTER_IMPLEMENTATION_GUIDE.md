@@ -13,7 +13,7 @@ The Knowledge Organization Infrastructure (KOI) is a production-ready distribute
 **Production Deployment**: Complete sensor‑to‑agent pipeline operational; hybrid graph search live via MCP with canonical‑aware NL→SPARQL and smart fallback.
 
 **Key Achievements**:
-- 12 active sensors monitoring diverse platforms (GitHub, GitLab, Medium, Discourse, Telegram, Twitter, Discord, Podcast, Notion, Ledger, Websites)
+- 9 active sensors monitoring diverse platforms (GitHub, GitLab, Medium, Discourse, Telegram, Podcast, Notion, Ledger, Websites)
 - Real‑time event processing with RID‑based deduplication and content versioning
 - BGE embeddings (1024‑dim vectors) stored in PostgreSQL with pgvector
 - Refined RDF graph (~101,903 triples; 20,325 statements) with canonical categories (`regx:canonicalPredicate`)
@@ -50,63 +50,128 @@ The Knowledge Organization Infrastructure (KOI) is a production-ready distribute
 
 ### 1.1 High-Level Overview
 
-The KOI system follows a distributed microservices architecture with clear data flow from sensors through processing to agent consumption:
+The KOI system follows a distributed microservices architecture with THREE knowledge storage layers:
 
 ```
-┌─────────────┐
-│   SENSORS   │ ─── Monitor sources (12 platforms)
-│  (Partial)  │
-└──────┬──────┘
-       │ KOI Events (NEW/UPDATE/FORGET)
-       ▼
-┌─────────────┐
-│ COORDINATOR │ ─── Route events, track health
-│ (Full Node) │
-└──────┬──────┘
-       │ Forward events
-       ▼
-┌─────────────┐
-│EVENT BRIDGE │ ─── Deduplicate, version, chunk
-│    (v2)     │
-└──────┬──────┘
-       │ Process content
-       ▼
-┌─────────────┐
-│ BGE SERVER  │ ─── Generate 1024D embeddings
-└──────┬──────┘
-       │ Store vectors
-       ▼
-┌─────────────┐
-│ POSTGRESQL  │ ─── koi_memories + pgvector
-│ (pgvector)  │
-└──────┬──────┘
-       │ Query via MCP (Vectors)
-       ▼
-┌─────────────┐
-│   AGENTS    │ ─── RAG access to knowledge
-│  (ElizaOS)  │
-└─────────────┘
+                        ┌─────────────────────────────────────┐
+                        │   SENSORS (12 platforms)            │
+                        │   Monitor sources, emit KOI events  │
+                        └──────────────┬──────────────────────┘
+                                       │ KOI Events (NEW/UPDATE/FORGET)
+                                       ▼
+                        ┌─────────────────────────────────────┐
+                        │   COORDINATOR                       │
+                        │   Route events, track health        │
+                        └──────────────┬──────────────────────┘
+                                       │ Forward events
+                                       ▼
+                        ┌─────────────────────────────────────┐
+                        │   EVENT BRIDGE v2                   │
+                        │   Deduplicate, version, chunk       │
+                        └──────────────┬──────────────────────┘
+                                       │ Process content
+                                       ▼
+                        ┌─────────────────────────────────────┐
+                        │   BGE SERVER (port 8090)            │
+                        │   Generate 1024-dim embeddings      │
+                        └──────────────┬──────────────────────┘
+                                       │
+                  ┌────────────────────┴────────────────────┐
+                  │                                         │
+                  ▼                                         ▼
+   ┌──────────────────────────┐              ┌──────────────────────────┐
+   │  POSTGRESQL + pgvector   │              │  POSTGRESQL + Apache AGE │
+   │  - koi_memories          │              │  - Code graph (Cypher)   │
+   │  - koi_embeddings        │              │  - 26,768 entities       │
+   │  - 15,000+ docs          │              │  - 11,331 CALLS edges    │
+   │  - BGE vectors (1024D)   │              │  - Tree-sitter extracted │
+   └──────────────┬───────────┘              └──────────────┬───────────┘
+                  │                                         │
+                  └────────────────┬────────────────────────┘
+                                   │
+                                   ▼
+                  ┌──────────────────────────────────────────┐
+                  │  APACHE JENA FUSEKI (port 3030)          │
+                  │  - RDF triples (~101,903)                │
+                  │  - SPARQL endpoint                       │
+                  │  - Canonical categories                  │
+                  │  - Semantic reasoning                    │
+                  └──────────────┬───────────────────────────┘
+                                 │
+                                 ▼
+                  ┌──────────────────────────────────────────┐
+                  │  MCP SERVER (regen-koi-mcp)              │
+                  │  - Query all 3 storage layers            │
+                  │  - RRF fusion (graph + vector + SPARQL)  │
+                  │  - 9 tools for AI agents                 │
+                  └──────────────┬───────────────────────────┘
+                                 │
+                                 ▼
+                  ┌──────────────────────────────────────────┐
+                  │  AGENTS (Claude, ElizaOS)                │
+                  │  - RAG access to all knowledge           │
+                  │  - Hybrid search with fusion             │
+                  └──────────────────────────────────────────┘
 ```
 
-### 1.3 Hybrid Graph + Vector Architecture
+**Three Knowledge Layers:**
+1. **Vector Layer** (pgvector) - Semantic search over 15,000+ documents
+2. **Code Graph** (Apache AGE) - Code entities, function calls, relationships
+3. **RDF Graph** (Apache Jena) - Semantic triples, SPARQL queries, reasoning
 
-In addition to vector search, the system maintains a refined RDF knowledge graph and exposes an adaptive NL→SPARQL path via the MCP server. Queries run in parallel on both paths and results are fused with Reciprocal Rank Fusion (RRF):
+### 1.2 Storage Layer Details
+
+**PostgreSQL + pgvector** (Port 5433):
+- Tables: `koi_memories`, `koi_embeddings`
+- Content: 15,000+ documents from 12 sensor platforms
+- Vectors: BGE 1024-dimensional embeddings
+- Purpose: Semantic search across all ingested content
+
+**PostgreSQL + Apache AGE** (Same PostgreSQL instance):
+- Graph: `regen_graph_v2`
+- Content: 26,768 code entities (Methods, Functions, Structs, Interfaces)
+- Edges: 11,331 CALLS relationships
+- Purpose: Code graph traversal, call analysis, orphan detection
+- Query Language: Cypher
+
+**Apache Jena Fuseki** (Port 3030):
+- Dataset: `koi`
+- Content: ~101,903 RDF triples (20,325 refined statements)
+- Features: Canonical categories, predicate communities
+- Purpose: SPARQL queries, semantic reasoning, ontology-based search
+- Query Language: SPARQL
+
+### 1.3 Hybrid Query Architecture
+
+The MCP server queries all three storage layers in parallel and fuses results:
 
 ```
-User Query → MCP → [Focused SPARQL] + [Broad SPARQL] + [Vector]
-                        │                 │              │
-            Canonical‑aware filter     Canonical‑aware   KOI API
-            + predicate retrieval      fallback if zero  semantic
-                        │                 │              │
-                        └─────── RRF Fusion over merged results ───────┘
+User Query → MCP Server
+               │
+               ├─ [Apache AGE Code Graph] ─────→ Cypher queries
+               │                                  (code entities)
+               │
+               ├─ [Apache Jena SPARQL] ───────→ SPARQL queries
+               │   ├─ Focused (canonical)       (RDF triples)
+               │   └─ Broad (fallback)
+               │
+               └─ [pgvector Semantic] ─────────→ Vector search
+                                                  (15K+ docs)
+                      │           │           │
+                      └───────────┴───────────┘
+                              │
+                        RRF Fusion
+                              │
+                        Final Results
 ```
 
 Key behaviors:
-- Canonical‑aware filtering: maps keywords → canonical categories; prunes noise structurally
-- Smart fallback: if canonical returns zero results, retry broad branch without canonical to recover recall
-- Predicate retrieval: embeddings + usage + community expansion build focused predicate sets
+- **Parallel Execution**: All three queries run simultaneously
+- **Canonical-aware filtering** (Jena): Maps keywords → canonical categories
+- **Smart fallback** (Jena): If zero results, retry without canonical filter
+- **Result Fusion**: Reciprocal Rank Fusion combines results from all sources
 
-### 1.2 Component Responsibilities
+### 1.4 Component Responsibilities
 
 **Sensors (koi-sensors)**:
 - Monitor external data sources continuously
