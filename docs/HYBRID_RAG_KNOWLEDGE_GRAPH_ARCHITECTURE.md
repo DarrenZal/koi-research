@@ -754,3 +754,296 @@ Query Input
 See `/opt/projects/koi-processor/docs/SEARCH_QUALITY_FIX_PLAN.md` for complete migration details.
 
 **Last Updated:** October 1, 2025
+
+---
+
+## Major Update: Code Graph Integration with Apache AGE (November 2025)
+
+### Architecture Evolution: Three Knowledge Layers
+
+The system has evolved to include a **third knowledge layer** specifically for code understanding:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   KOI Knowledge System                  │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Layer 1: DOCUMENT VECTORS (pgvector)                  │
+│  - 15,000+ documents from 12 platforms                 │
+│  - OpenAI embeddings (1024-dim)                        │
+│  - Semantic search                                     │
+│                                                         │
+│  Layer 2: RDF KNOWLEDGE GRAPH (Apache Jena Fuseki)     │
+│  - 101,903 RDF triples                                 │
+│  - SPARQL queries, canonical categories                │
+│  - Semantic reasoning                                  │
+│                                                         │
+│  Layer 3: CODE GRAPH (Apache AGE) ← NEW!               │
+│  - 26,768 code entities (Functions, Structs, etc.)    │
+│  - 11,331 CALLS edges                                  │
+│  - Cypher graph queries                                │
+│  - Tree-sitter AST extraction                          │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ↓
+              ┌──────────────────────┐
+              │  MCP Server v1.1.0   │
+              │  (regen-koi-mcp)     │
+              │  - 9 Tools           │
+              │  - RRF Fusion        │
+              │  - Phase 7 Hardening │
+              └──────────────────────┘
+```
+
+### Code Graph (Apache AGE)
+
+**Purpose:** Enable code-level understanding and navigation for AI agents.
+
+**Storage:** PostgreSQL with Apache AGE extension (same PostgreSQL instance as pgvector)
+
+**Graph Name:** `regen_graph_v2`
+
+**Content:**
+- **26,768 entities** extracted via tree-sitter AST parsing
+  - Methods: 19,884
+  - Imports: 3,363
+  - Functions: 1,693
+  - Structs: 1,636
+  - Interfaces: 192
+  - Concepts: 10 (domain abstractions)
+
+- **11,331 CALLS edges** mapping function call relationships
+  - Enables "what calls this?" queries
+  - Enables "what does this call?" queries
+  - Call graph traversal
+  - Orphan code detection
+
+**Extraction Pipeline:**
+```
+Go Source Code
+      ↓
+Tree-sitter Parser (AST)
+      ↓
+Entity Extractor
+  - Function signatures
+  - Struct definitions
+  - Interface declarations
+  - Method implementations
+      ↓
+Relationship Analyzer
+  - CALLS edges (function → function)
+  - CONTAINS edges (module → entity)
+  - EXPLAINS edges (concept → code)
+      ↓
+Apache AGE Graph (Cypher)
+```
+
+**Query Capabilities:**
+- `find_callers(function_name)` - Who calls this function?
+- `find_callees(function_name)` - What does this function call?
+- `find_call_graph(function_name)` - Complete call tree
+- `find_orphaned_code()` - Functions never called
+- `trace_call_chain(from, to)` - Path between functions
+- `search_entities(name)` - Find by name pattern
+- `find_by_type(entity_type)` - List all Structs, Functions, etc.
+- `list_modules()` - Show module hierarchy
+- `module_entities(module_name)` - Code in specific module
+
+**Integration with Existing Layers:**
+
+```
+User Query: "How does credit retirement work?"
+
+MCP Server Routes to All 3 Layers:
+
+1. Apache AGE (Code Graph)
+   └─ Cypher: MATCH (e:Entity {name: 'MsgRetire'})
+   └─ Returns: MsgRetire struct, Retire function, retirement handlers
+
+2. Apache Jena (RDF Graph)
+   └─ SPARQL: Find triples about retirement
+   └─ Returns: Semantic relationships, canonical categories
+
+3. pgvector (Document Search)
+   └─ Vector: Semantic search for "retirement"
+   └─ Returns: Documentation, forum posts, guides
+
+RRF Fusion → Combined Results
+```
+
+### MCP Server v1.1.0 (Phase 7 Production Ready)
+
+**Location:** [github.com/gaiaaiagent/regen-koi-mcp](https://github.com/gaiaaiagent/regen-koi-mcp)
+
+**NPM Package:** `regen-koi-mcp@1.1.0`
+
+**Deployment:** `npx -y regen-koi-mcp@latest` (auto-updates)
+
+**9 MCP Tools:**
+
+1. **query_code_graph** - 15+ graph query types over Apache AGE
+2. **hybrid_search** - Intelligent routing (graph vs vector)
+3. **search_knowledge** - Semantic search with date filters
+4. **search_github_docs** - Documentation across 4 repos
+5. **get_repo_overview** - Repository structure
+6. **get_tech_stack** - Technology breakdown
+7. **get_stats** - Knowledge base statistics
+8. **generate_weekly_digest** - Activity summaries
+9. **get_mcp_metrics** - Production metrics
+
+**Phase 7 Production Features:**
+
+**Resilience:**
+- Exponential backoff retry (3 attempts: 1s → 2s → 4s)
+- Circuit breaker pattern (prevents cascading failures)
+- Timeout enforcement (30s default)
+- Graceful degradation
+
+**Observability:**
+- Structured logging (pino → stderr, MCP-safe)
+- Latency tracking (p50/p95/p99 percentiles)
+- Cache hit/miss rates
+- Error tracking by tool
+- Circuit breaker state monitoring
+
+**Performance:**
+- 4-tier LRU caching:
+  - Static: 1 hour TTL (repository lists)
+  - Semi-static: 10 min TTL (entity types)
+  - Dynamic: 5 min TTL (search results)
+  - Volatile: 1 min TTL (metrics)
+- Query result caching reduces API load
+
+**Security:**
+- Zod schema validation on all inputs
+- SQL/Cypher injection detection
+- Path traversal prevention
+- Sensitive data redaction in logs
+
+**Production Metrics (Current):**
+- Query latency: p95 < 500ms, p99 < 1000ms
+- Cache hit rate: Target > 50%
+- Success rate: 100%
+- Circuit breaker trips: 0 (healthy)
+
+### Updated Architecture Diagram
+
+**Complete Hybrid RAG + Code Graph:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    SENSORS (12 platforms)               │
+│  GitHub, GitLab, Medium, Discourse, Telegram, Discord,  │
+│  Twitter, Podcast, Notion, Ledger, Websites             │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓ KOI Events
+┌─────────────────────────────────────────────────────────┐
+│              COORDINATOR + EVENT BRIDGE v2              │
+│  Deduplication, versioning, chunking, CAT receipts      │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+            ┌──────────┴──────────┐
+            ↓                     ↓
+    ┌───────────────┐     ┌───────────────┐
+    │  BGE Server   │     │  Tree-sitter  │
+    │  (8090)       │     │  Code Parser  │
+    │  OpenAI API   │     │               │
+    └───────┬───────┘     └───────┬───────┘
+            │                     │
+            ↓                     ↓
+┌─────────────────────────────────────────────────────────┐
+│           POSTGRESQL (Port 5433)                        │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌──────────────────┐    ┌──────────────────┐         │
+│  │ koi_memories +   │    │ Apache AGE       │         │
+│  │ koi_embeddings   │    │ Graph            │         │
+│  │                  │    │                  │         │
+│  │ 15,000+ docs     │    │ regen_graph_v2   │         │
+│  │ OpenAI vectors   │    │ 26,768 entities  │         │
+│  │ 1024-dim         │    │ 11,331 edges     │         │
+│  └──────────────────┘    └──────────────────┘         │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│        APACHE JENA FUSEKI (Port 3030)                   │
+│  - 101,903 RDF triples                                  │
+│  - SPARQL queries, canonical categories                 │
+└─────────────────────────────────────────────────────────┘
+                       │
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│           MCP SERVER (regen-koi-mcp v1.1.0)             │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ Query Router                                    │   │
+│  │  ├─ Apache AGE (Cypher) ──→ Code entities      │   │
+│  │  ├─ Apache Jena (SPARQL) ──→ RDF triples       │   │
+│  │  └─ pgvector (Cosine) ──→ Document vectors     │   │
+│  └───────────────────┬─────────────────────────────┘   │
+│                      ↓                                  │
+│           RRF Fusion + Caching + Metrics                │
+│                      ↓                                  │
+│                  9 MCP Tools                            │
+└─────────────────────┬───────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────────────┐
+│              AI AGENTS (Claude, ElizaOS)                │
+│  - Comprehensive knowledge access                       │
+│  - Code + Docs + Community content                      │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Performance Impact
+
+**Query Performance with Code Graph:**
+
+| Query Type | Latency (p95) | Cache Hit Rate |
+|------------|---------------|----------------|
+| Code entity search | 753ms | 45% |
+| Call graph traversal | 1,155ms | 30% |
+| Hybrid search (all 3) | 2,781ms | 25% |
+| Document search only | 341ms | 60% |
+
+**Storage:**
+- Apache AGE: ~50MB (26,768 entities + 11,331 edges)
+- pgvector: ~200MB (15,000+ documents × 1024-dim)
+- Apache Jena: ~100MB (101,903 triples)
+- **Total:** ~350MB in-memory, efficient indexes
+
+### Use Cases Enabled
+
+**Code Navigation:**
+- "What functions call CreateBatch?"
+- "Show me the call graph for MsgRetire"
+- "Find all orphaned code that's never called"
+- "What Structs exist in the ecocredit module?"
+
+**Cross-Layer Queries:**
+- "How does credit retirement work?" → Code + Docs + RDF
+- "Show me the MsgCreateBatch implementation and documentation"
+- "Explain the Keeper pattern with code examples"
+
+**Impact Analysis:**
+- "If I change this function, what will break?"
+- "What depends on the BasketKeeper?"
+- "Trace the call path from API to database"
+
+### Technology Stack Update
+
+**Added:**
+- Apache AGE (PostgreSQL extension for graph)
+- Tree-sitter (AST parser for Go)
+- Cypher query language
+- pino (structured logging)
+- lru-cache (multi-tier caching)
+- Zod (validation schemas)
+
+**Updated:**
+- MCP Server: v1.0.6 → v1.1.0
+- PostgreSQL: Now hosts both pgvector AND Apache AGE
+- Query fusion: Now merges 3 sources (was 2)
+
+**Last Updated:** November 27, 2025
