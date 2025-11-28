@@ -2,7 +2,9 @@
 
 ## Overview
 
-This repository contains the Knowledge Organization Infrastructure (KOI) implementation for RegenAI, integrating BlockScience's KOI v3 protocol with Regen Network's metabolic ontology to create a distributed knowledge management system.
+This repository contains the Knowledge Organization Infrastructure (KOI) implementation for RegenAI, integrating KOI v3 protocol with Regen Network's knowledge ecosystem to create a distributed knowledge management system.
+
+**KOI** is a collaborative research effort across **BlockScience**, **Metagov**, and **RMIT**, adapted and extended for Regen Network's regenerative AI infrastructure.
 
 ## 🚀 Current Status (October 2025)
 
@@ -89,9 +91,10 @@ To begin implementation:
 
 ## Related Projects
 
-- [GAIA Main Repository](https://github.com/gaiaaiagent/GAIA)
-- [Plugin Knowledge](https://github.com/gaiaaiagent/plugin-knowledge)
-- [BlockScience KOI](https://github.com/BlockScience/koi)
+- **[regen-koi-mcp](https://github.com/gaiaaiagent/regen-koi-mcp)** - MCP server for AI agent access (npm: `regen-koi-mcp`)
+- **[GAIA Main Repository](https://github.com/gaiaaiagent/GAIA)** - ElizaOS-based AI agents
+- **[Plugin Knowledge](https://github.com/gaiaaiagent/plugin-knowledge)** - Knowledge plugin for agents
+- **[BlockScience KOI](https://github.com/BlockScience/koi)** - Original KOI research
 
 ## Current Status
 
@@ -119,10 +122,20 @@ To begin implementation:
 
 ### Technical Stack
 - **Apache Jena** + Fuseki SPARQL server for RDF storage and reasoning
+- **Apache AGE** (PostgreSQL extension) for code graph with 26,768 entities
 - **OWL ontologies** for semantic modeling and automated inference
 - **SPARQL endpoints** for Registry Framework integration
 - **JSON-LD** for semantic web compatibility
 - **Provenance tracking** with RID/CID dual identification
+
+### Agent Access Layer
+
+**MCP Server** ([regen-koi-mcp](https://github.com/gaiaaiagent/regen-koi-mcp)):
+- **9 MCP Tools** - Semantic search, code graph traversal, GitHub docs, metrics
+- **Production Features** - Retry logic, circuit breakers, LRU caching, validation
+- **Hybrid Search** - Vector + graph + keyword with RRF fusion
+- **NPM Package** - Auto-updates via `npx regen-koi-mcp@latest`
+- **Status** - v1.1.0 (Phase 7 Complete: Production Hardening)
 
 ---
 
