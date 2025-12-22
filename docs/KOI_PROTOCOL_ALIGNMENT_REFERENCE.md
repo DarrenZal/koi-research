@@ -27,18 +27,30 @@ This document captures how we align RegenAI's pipeline with the KOI protocol whi
 
 ## KOI Protocol Source of Truth
 
-**Authoritative source** (BlockScience):
-| Resource | Location | Notes |
-|----------|----------|-------|
-| KOI-net protocol | https://github.com/BlockScience/koi-net | Reference implementation; defines endpoints, payloads, behaviors |
-| rid-lib (RID/Manifest/Bundle) | https://github.com/BlockScience/rid-lib | Data structures and hashing |
-| PyPI packages | `pip install koi-net rid-lib` | Installable distributions |
+**Authoritative sources** (BlockScience):
+
+| Package | GitHub | PyPI | What it provides |
+|---------|--------|------|------------------|
+| **rid-lib** | [BlockScience/rid-lib](https://github.com/BlockScience/rid-lib) | `pip install rid-lib` (v3.2.12) | RID parsing, Manifest, Bundle, Cache classes |
+| **koi-net** | [BlockScience/koi-net](https://github.com/BlockScience/koi-net) | `pip install koi-net` (v1.2.4) | NodeInterface, protocol endpoints, knowledge handlers |
+
+**rid-lib** defines the data structures:
+- `RID` — Reference Identifier class with `from_string()`, context/reference parsing
+- `Manifest` — Descriptor with `rid`, `timestamp`, `sha256_hash`; use `Manifest.generate(rid, data)`
+- `Bundle` — Manifest + contents; the actual knowledge object
+- `Cache` — Local filesystem storage for bundles
+
+**koi-net** defines the protocol:
+- 5 endpoints: `/events/broadcast`, `/events/poll`, `/bundles/fetch`, `/manifests/fetch`, `/rids/fetch`
+- All POST with JSON body; event types are NEW, UPDATE, FORGET ("FUN")
+- Full nodes (servers) vs partial nodes (pollers)
+- `NodeInterface` class with knowledge processing pipeline
 
 **Local copies** (for offline reference):
 - `koi-research/sources/blockscience/koi-net`
 - `koi-research/sources/blockscience/rid-lib`
 
-**Our implementations** (must stay compatible with above):
+**Our implementations** (compatible but don't use the packages directly):
 | Component | Location |
 |-----------|----------|
 | Coordinator | `koi-sensors/koi_protocol/coordinator/koi_coordinator.py` |
@@ -47,7 +59,7 @@ This document captures how we align RegenAI's pipeline with the KOI protocol whi
 | Event bridge semantic | `koi-processor/src/core/koi_event_bridge_semantic.py` |
 | Protocol overview | `koi-sensors/koi_protocol/README.md` |
 
-**Key principle**: BlockScience's `koi-net` is the contract. Our implementations must produce compatible payloads and behaviors. We can extend (e.g., `/events/confirm`) but must not break interop.
+**Key principle**: BlockScience's packages are the contract. Our implementations produce compatible payloads and behaviors. We can extend (e.g., `/events/confirm`) but must not break interop. Adopting `rid-lib` directly would give us standard RID parsing and content hashing.
 
 ## Protocol alignment principles
 1. **Protocol-first**: Follow KOI-net request/response semantics and payload shapes.
