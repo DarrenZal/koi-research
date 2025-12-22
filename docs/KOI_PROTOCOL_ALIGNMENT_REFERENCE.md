@@ -17,11 +17,20 @@ This document captures how we align RegenAI's pipeline with the KOI protocol whi
 | Queue persistence | ✅ Done — JSON file (coordinator + sensors) |
 | Pending/processed state | ✅ Done — Sensors track before/after emit |
 
-**Remaining alignment work** (not blocking production):
-1. 🔲 Adopt `rid-lib` for RID/Manifest/Bundle parsing (semantic alignment)
-2. 🔲 Evaluate queue persistence strategy (JSON vs SQLite/Postgres)
+**Recommended next step** — Research adopting BlockScience packages:
 
-**Immediate next step**: Decide whether to adopt `rid-lib` directly or continue with our compatible implementation. See [Open questions](#open-questions-to-resolve-with-blockscience).
+| Package | Replaces | Benefit |
+|---------|----------|---------|
+| `rid-lib` | Our Bundle/Manifest classes | Standard RID parsing, content hashing, interop |
+| `koi-net` | Our coordinator/forwarder | Full NodeInterface, knowledge handlers, network graph |
+
+**Action items:**
+1. 🔲 Spike: Install `rid-lib` and test if our payloads are compatible with their classes
+2. 🔲 Spike: Evaluate `koi-net` NodeInterface as coordinator replacement
+3. 🔲 Document trade-offs: maintenance burden vs. flexibility of custom code
+4. 🔲 Decide: adopt, wrap, or continue with compatible implementation
+
+See [Future work](#future-work-when-prioritized) for detailed research questions.
 
 ---
 
@@ -177,17 +186,39 @@ SignedEnvelope support is optional. When enabled:
 
 ## Future work (when prioritized)
 
-**rid-lib adoption** (optional, for semantic alignment):
-- Evaluate if `rid-lib` models add value over our current implementation
-- If adopting: wrap or use directly in coordinator/forwarder
-- Test interop with BlockScience reference nodes
+### Research: Adopting rid-lib and koi-net
 
-**Upstream contributions** (when ready):
+**Why consider this?**
+- Reduces maintenance burden (BlockScience maintains the packages)
+- Guarantees interop with other KOI-net nodes
+- Gets us bug fixes and improvements automatically
+- Enables collaboration on shared codebase
+
+**rid-lib research questions:**
+- Can we deserialize our existing payloads into `rid_lib.Bundle` / `rid_lib.Manifest`?
+- Does their `sha256_hash` match our content hashing approach?
+- Can we use `rid_lib.Cache` for our coordinator's event queue?
+- What's the migration path for existing stored data?
+
+**koi-net research questions:**
+- Can `NodeInterface` replace our `KOICoordinator` class?
+- How do their knowledge handlers map to our event processing?
+- Does their polling model support our `include_event_ids` + `/events/confirm` extension?
+- Can we register custom handlers for our semantic extraction pipeline?
+- What's the impact on our sensors (partial nodes)?
+
+**Adoption options:**
+1. **Full adoption** — Replace our code with their packages entirely
+2. **Wrap** — Use their classes internally, keep our API surface
+3. **Selective** — Adopt `rid-lib` for data structures, keep custom coordinator
+4. **Stay compatible** — Continue with our implementation, ensure payload compatibility
+
+### Upstream contributions (when ready)
 - Draft issue/PR for `/events/confirm` extension in `koi-net`
 - Propose queue persistence hooks for full nodes
 - Document our retry policy as a recommended pattern
 
-**Infrastructure improvements** (as needed):
+### Infrastructure improvements (as needed)
 - Migrate queue persistence from JSON to SQLite/Postgres for durability
 - Add 24h reconciliation alerting for unconfirmed events
 - Consider deprecating legacy GET endpoints after migration period
