@@ -77,6 +77,7 @@ See [Future work](#future-work-when-prioritized) for detailed research questions
 - GitHub: [BlockScience/koi](https://github.com/BlockScience/koi) — Project index and version history
 
 **BlockScience blog posts** (conceptual foundations):
+- [Architecting Knowledge Organization Infrastructure](https://blog.block.science/architecting-knowledge-organization-infrastructure/) — Architecture overview
 - [A Preview of the KOI-net Protocol](https://blog.block.science/a-preview-of-the-koi-net-protocol/) — Protocol overview
 - [KOI Nodes as Neurons](https://blog.block.science/koi-nodes-as-neurons/) — Node architecture concepts
 - [KOI Network Protocol x Project Interlay](https://blog.block.science/koi-network-protocol-project-interlay/) — Research collaboration
