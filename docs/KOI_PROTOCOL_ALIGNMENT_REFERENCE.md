@@ -1,6 +1,29 @@
 # KOI Protocol Alignment Reference
 
-This document captures how we will align RegenAI's pipeline with the KOI protocol while collaborating with BlockScience to evolve the protocol without fragmentation. It is intended as a working reference for research sources, current gaps, and concrete next steps.
+This document captures how we align RegenAI's pipeline with the KOI protocol while collaborating with BlockScience to evolve the protocol without fragmentation.
+
+---
+
+## Status Summary (Dec 2025)
+
+**Pipeline health**: ✅ All services operational, all audit issues resolved.
+
+| Area | Status |
+|------|--------|
+| POST polling endpoints | ✅ Done — All forwarders and docs use POST |
+| Delivery confirmation | ✅ Done — Ack only on `success: true` |
+| HTTP error semantics | ✅ Done — Bridges return 500 on failure |
+| SignedEnvelope support | ✅ Done — Optional, env-configurable |
+| Queue persistence | ✅ Done — JSON file (coordinator + sensors) |
+| Pending/processed state | ✅ Done — Sensors track before/after emit |
+
+**Remaining alignment work** (not blocking production):
+1. 🔲 Adopt `rid-lib` for RID/Manifest/Bundle parsing (semantic alignment)
+2. 🔲 Evaluate queue persistence strategy (JSON vs SQLite/Postgres)
+
+**Immediate next step**: Decide whether to adopt `rid-lib` directly or continue with our compatible implementation. See [Open questions](#open-questions-to-resolve-with-blockscience).
+
+---
 
 ## Source-of-truth references
 - BlockScience KOI-net protocol reference implementation: `koi-research/sources/blockscience/koi-net`
@@ -130,8 +153,19 @@ SignedEnvelope support is optional. When enabled:
 - Preferred signing/envelope expectations for partial nodes (optional vs required).
 - Are POST-only endpoints strictly required, or can GET remain as a compatible fallback?
 
-## Next steps for tomorrow
-- Decide if we adopt `rid-lib` directly in our coordinator/forwarder or wrap it.
-- Sketch a compatibility matrix: current endpoints vs KOI-net endpoints.
-- Draft upstream issue/PRs in `koi-research/sources/blockscience/koi-net`.
-- Prepare a migration path: GET -> POST, unsigned -> signed envelopes.
+## Future work (when prioritized)
+
+**rid-lib adoption** (optional, for semantic alignment):
+- Evaluate if `rid-lib` models add value over our current implementation
+- If adopting: wrap or use directly in coordinator/forwarder
+- Test interop with BlockScience reference nodes
+
+**Upstream contributions** (when ready):
+- Draft issue/PR for `/events/confirm` extension in `koi-net`
+- Propose queue persistence hooks for full nodes
+- Document our retry policy as a recommended pattern
+
+**Infrastructure improvements** (as needed):
+- Migrate queue persistence from JSON to SQLite/Postgres for durability
+- Add 24h reconciliation alerting for unconfirmed events
+- Consider deprecating legacy GET endpoints after migration period
