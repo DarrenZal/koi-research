@@ -25,19 +25,29 @@ This document captures how we align RegenAI's pipeline with the KOI protocol whi
 
 ---
 
-## Source-of-truth references
-- BlockScience KOI-net protocol reference implementation: `koi-research/sources/blockscience/koi-net`
-- BlockScience RID library (RID/Manifest/Bundle): `koi-research/sources/blockscience/rid-lib`
-- PyPI packages (reference distributions): `koi-net` and `rid-lib`
-- KOI protocol overview in our repo: `koi-sensors/koi_protocol/README.md`
-- Current RegenAI coordinator implementation: `koi-sensors/koi_protocol/coordinator/koi_coordinator.py`
-- Current forwarder (poller) implementation: `koi-processor/scripts/coordinator_to_eventbridge_forwarder.py`
-- Event bridge v2: `koi-processor/src/core/koi_event_bridge_v2.py`
-- Event bridge semantic: `koi-processor/src/core/koi_event_bridge_semantic.py`
+## KOI Protocol Source of Truth
 
-Notes:
-- The KOI protocol is the contract; the BlockScience libraries are reference implementations.
-- We can use `koi-net` and `rid-lib` directly, or keep our custom stack as long as payloads and behaviors remain protocol-compatible.
+**Authoritative source** (BlockScience):
+| Resource | Location | Notes |
+|----------|----------|-------|
+| KOI-net protocol | https://github.com/BlockScience/koi-net | Reference implementation; defines endpoints, payloads, behaviors |
+| rid-lib (RID/Manifest/Bundle) | https://github.com/BlockScience/rid-lib | Data structures and hashing |
+| PyPI packages | `pip install koi-net rid-lib` | Installable distributions |
+
+**Local copies** (for offline reference):
+- `koi-research/sources/blockscience/koi-net`
+- `koi-research/sources/blockscience/rid-lib`
+
+**Our implementations** (must stay compatible with above):
+| Component | Location |
+|-----------|----------|
+| Coordinator | `koi-sensors/koi_protocol/coordinator/koi_coordinator.py` |
+| Forwarder | `koi-processor/scripts/coordinator_to_eventbridge_forwarder.py` |
+| Event bridge v2 | `koi-processor/src/core/koi_event_bridge_v2.py` |
+| Event bridge semantic | `koi-processor/src/core/koi_event_bridge_semantic.py` |
+| Protocol overview | `koi-sensors/koi_protocol/README.md` |
+
+**Key principle**: BlockScience's `koi-net` is the contract. Our implementations must produce compatible payloads and behaviors. We can extend (e.g., `/events/confirm`) but must not break interop.
 
 ## Protocol alignment principles
 1. **Protocol-first**: Follow KOI-net request/response semantics and payload shapes.
