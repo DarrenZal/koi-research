@@ -70,6 +70,30 @@ See [Future work](#future-work-when-prioritized) for detailed research questions
 
 **Key principle**: BlockScience's packages are the contract. Our implementations produce compatible payloads and behaviors. We can extend (e.g., `/events/confirm`) but must not break interop. Adopting `rid-lib` directly would give us standard RID parsing and content hashing.
 
+## Background Reading
+
+**KOI research overview** (history and context):
+- Local: `koi-research/sources/blockscience/koi/README.md` — Inventory of all KOI repos (v1-v3)
+- GitHub: [BlockScience/koi](https://github.com/BlockScience/koi) — Project index and version history
+
+**BlockScience blog posts** (conceptual foundations):
+- [A Preview of the KOI-net Protocol](https://blog.block.science/a-preview-of-the-koi-net-protocol/) — Protocol overview
+- [KOI Nodes as Neurons](https://blog.block.science/koi-nodes-as-neurons/) — Node architecture concepts
+- [KOI Network Protocol x Project Interlay](https://blog.block.science/koi-network-protocol-project-interlay/) — Research collaboration
+- [A Language for Knowledge Networks](https://blog.block.science/a-language-for-knowledge-networks/) — Theoretical foundations
+- [Objects as Reference](https://blog.block.science/objects-as-reference-toward-robust-first-principles-of-digital-organization/) — RID conceptual basis
+
+**Related projects**:
+- [Metagov KOI Pond](https://metagov.org/projects/koi-pond) — KOI v2 implementation
+- [RMIT Slack Telescope](https://github.com/metagov/slack-telescope) — Consent-based research tool using rid-lib
+- [KOI Obsidian Plugin](https://github.com/metagov/koi-obsidian-plugin) — Partial node for researchers
+
+**Reference node implementations** (examples to learn from):
+- [koi-net-coordinator-node](https://github.com/BlockScience/koi-net-coordinator-node)
+- [koi-net-slack-sensor-node](https://github.com/BlockScience/koi-net-slack-sensor-node)
+- [koi-net-github-sensor-node](https://github.com/BlockScience/koi-net-github-sensor-node)
+- [koi-net-node-template](https://github.com/BlockScience/koi-net-node-template) — Starting point for new nodes
+
 ## Protocol alignment principles
 1. **Protocol-first**: Follow KOI-net request/response semantics and payload shapes.
 2. **Minimal extensions**: Add only what is necessary for reliability or observability, and keep extensions optional.
