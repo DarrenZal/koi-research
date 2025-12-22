@@ -35,14 +35,14 @@ Notes:
 - **Signed envelopes**: Supported; key distribution and target validation defaults documented (env vars below).
 - **Delivery confirmation**: `/events/confirm` is a local extension (not in KOI-net).
 - **Pending/confirmed state**: sensors now mark pending before emit and processed on success; retry policy documented (not enforced automatically).
-- **Error semantics**: Event bridges return HTTP 200 on failure; forwarders now check `success`, but status codes remain 200.
+- **Error semantics**: ✅ Event bridges now return HTTP 500 on failure (with `success=false` in body); forwarders handle both status codes and body.
 
 ## Audit issue status (KOI-related)
 
 | Issue | Status | Notes |
 |-------|--------|-------|
 | Forwarder confirms on HTTP 200 only | DONE | Forwarders now confirm only on `success: true`. |
-| Bridges return HTTP 200 on failure | OPEN | Still HTTP 200 with `success=false`; forwarders gate confirms. |
+| Bridges return HTTP 200 on failure | DONE | Bridges now return HTTP 500 on failure; forwarders handle both. |
 | Events acked when processing failed | DONE | Acks only after downstream success. |
 | Double-enqueue in coordinator | DONE | Broadcast no longer queues twice. |
 | No SignedEnvelope handling | DONE | Optional SignedEnvelope support added. |
@@ -61,6 +61,9 @@ Notes:
 - Added an in-process integration test that validates broadcast → poll → forward → confirm.
 - All user-facing docs updated to reference POST polling: QUICKSTART.md, koi_protocol/README.md, INTEGRATION_GUIDE.md, KOI-PIPELINE-INTEGRATION.md.
 - Retry policy and key distribution defaults documented in this file.
+- Event bridges (v2 and semantic) now return HTTP 500 on failure (instead of 200 with `success=false`).
+- Forwarders updated to extract error details from non-200 responses.
+- Added integration test for bridge failure scenario (HTTP 500 → no confirm).
 
 ## Alignment plan (near-term)
 1. ✅ **Migrate remaining docs/scripts to POST endpoints** — Completed; all docs now reference POST polling.
