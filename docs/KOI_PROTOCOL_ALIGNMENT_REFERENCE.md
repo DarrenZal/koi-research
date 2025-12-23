@@ -65,9 +65,8 @@ This document is the authoritative reference for RegenAI's KOI pipeline alignmen
 - `koi-research/sources/blockscience/koi-net`
 
 **Current dependency status (Dec 2025):**
-- `rid-lib` is **NOT installed** in `koi-sensors/requirements.txt` or `koi-processor/requirements.txt`
-- Some code already imports `rid_lib` (e.g., `koi-sensors/shared/rid_types/*.py`) — will fail until dependency added
-- Adding `rid-lib` to requirements is a prerequisite for P0
+- ✅ `rid-lib>=3.2.8` installed in `koi-sensors/requirements.txt` and `koi-processor/requirements.txt` (P0 complete)
+- Sensor venvs fall back to legacy hashing if rid-lib not installed (ImportError caught in `bundle_system.py`)
 
 ### rid-lib defines the data contracts
 
