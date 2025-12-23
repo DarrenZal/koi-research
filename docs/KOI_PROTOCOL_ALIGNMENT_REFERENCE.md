@@ -500,30 +500,40 @@ This implements the "dialect/common language" model: strict common language at t
 
 Based on pre-implementation research findings.
 
-### Phase 1 (P0) — Foundation ← READY TO START
+### Phase 1 (P0) — Foundation ✅ COMPLETE (Dec 2025)
 
-**Critical constraint:** Preserve existing internal `/events/*` endpoint behavior throughout P0. The clients in Appendix F must continue working during the transition. Strict wire behavior comes in P1 via the `/koi-net/*` surface.
+**PRs merged:**
+- [koi-sensors#4](https://github.com/gaiaaiagent/koi-sensors/pull/4) — Merged 2025-12-23
+- [koi-processor#5](https://github.com/gaiaaiagent/koi-processor/pull/5) — Merged 2025-12-23
 
-1. **Add `rid-lib` dependency** to `koi-sensors` and `koi-processor` requirements
-2. **Adopt rid-lib for hashing and RID parsing:**
-   - Replace `Manifest.generate()` to use `rid_lib.ext.Manifest.generate()`
-   - Replace RID parsing to use `rid_lib.RID.from_string()`
-   - Must use rid-lib's internal JCS (not standalone `canonicaljson`)
-3. **Implement dual-hash support:**
-   - Store both `legacy_content_hash` and `sha256_hash` during transition
-   - Use `sha256_hash` for new interop code paths
-   - Internal endpoints continue accepting/returning legacy format
-4. **Standardize timestamp serialization:**
-   - Ensure all timestamps use `Z` suffix (not `+00:00`) for wire format
-   - Prefer rid-lib/koi-net Pydantic models for serialization
-5. **Consolidate `koi_envelope.py`:**
-   - Merge `koi-sensors/shared/koi_envelope.py` and `koi-processor/scripts/koi_envelope.py`
-6. **Backward compatibility verification:**
-   - Existing `test_koi_flow_integration.py` must pass
-   - Internal forwarders (`coordinator_to_eventbridge_forwarder.py`, etc.) must work unchanged
+**Completed:**
+1. ✅ **Add `rid-lib` dependency** to `koi-sensors` and `koi-processor` requirements
+2. ✅ **Adopt rid-lib for hashing and RID parsing:**
+   - `Manifest.generate()` now uses rid-lib's JCS canonicalization
+   - RID parsing handles ORNs (`orn:namespace:reference`) and URIs with ports
+   - ImportError fallback to legacy hashing if rid-lib not available
+3. ✅ **Implement dual-hash support:**
+   - `sha256_hash` (rid-lib JCS) + `legacy_content_hash` (json.dumps)
+   - `content_hash` property aliases `sha256_hash`
+   - Internal endpoints continue accepting legacy format
+4. ✅ **Backward compatibility verification:**
+   - 24 tests in koi-sensors, 11 tests in koi-processor — all passing
+   - `test_koi_flow_integration.py` passes
+   - Internal forwarders work unchanged
 
-### Phase 2 (P1) — Strict interop surface
+**Deferred to P1:**
+- [ ] Timestamp Z serialization (still uses `+00:00`, not `Z`)
+- [ ] `koi_envelope.py` consolidation (two implementations still exist)
 
+**Rollout note:** Low-risk Option A deployed — rid-lib installed in coordinator/processor venvs but NOT in sensor venvs. Sensors fall back to legacy hashing until rid-lib is explicitly installed in their venvs.
+
+### Phase 2 (P1) — Strict interop surface ← NEXT
+
+**Carries over from P0:**
+- [ ] Timestamp Z serialization (replace `+00:00` with `Z` for wire format)
+- [ ] `koi_envelope.py` consolidation (use koi-sensors version as canonical)
+
+**P1 scope:**
 1. **Add `/koi-net/*` router** that matches KOI-net request/response models exactly:
    - `POST /koi-net/events/broadcast`
    - `POST /koi-net/events/poll`
@@ -539,6 +549,8 @@ Based on pre-implementation research findings.
    - Coordinate with daily curator on metadata location change (`koi_manifest.metadata.url` → `contents._regen.url`)
 4. **Create SignedEnvelope interop tests** against a reference node template
 5. **Consider Python 3.12 upgrade** if using koi-net models directly
+
+**Critical constraint:** Keep internal `/events/*` endpoints unchanged. Appendix F clients must continue working.
 
 ### Phase 3 (P2) — Durability + upstream collaboration
 
