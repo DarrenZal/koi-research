@@ -1,0 +1,121 @@
+# KOI Hash Parity Spike
+
+## Environment
+- repo_root: /Users/darrenzal/projects/RegenAI
+- python: 3.11.13
+- rid_lib installed: True
+- canonicaljson installed: False
+
+## Summary
+- total_payloads: 9588
+- legacy_mismatch_count: 9588
+- legacy_mismatch_pct: 100.0
+- compact_mismatch_count: 843
+- compact_mismatch_pct: 8.792240300375468
+- manifest_checked: 3
+- manifest_mismatch_count: 0
+- canonical_engine_counts: {'rid-lib.vendor.JCS': 9588}
+
+## Examples (legacy != canonical)
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/koi_protocol/coordinator/coordinator_event_queue.json
+  - kind: coordinator_queue_event[0].bundle.contents
+  - manifest_hash: 24f6a8383c8f88ce8c39333fb7d3842bf29c8a2dc690e0288af3d91f829b3113
+  - manifest_matches_legacy: True
+  - legacy_hash: 24f6a8383c8f88ce8c39333fb7d3842bf29c8a2dc690e0288af3d91f829b3113
+  - compact_hash: a8d1890cfdcfdca1b985ab7cc291fe4ec8597268922cb0d8529d85e2f621dd71
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: a8d1890cfdcfdca1b985ab7cc291fe4ec8597268922cb0d8529d85e2f621dd71
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/koi_protocol/coordinator/coordinator_event_queue.json
+  - kind: coordinator_queue_event[1].bundle.contents
+  - manifest_hash: 50366692d16483a102932e5d8025b24436509d084f6e71ecc0b712ed82f71281
+  - manifest_matches_legacy: True
+  - legacy_hash: 50366692d16483a102932e5d8025b24436509d084f6e71ecc0b712ed82f71281
+  - compact_hash: 38c84b54ab8dcb1ffe4469ac5d952175cccaa24abb39119465da27bca1e4e55b
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: 38c84b54ab8dcb1ffe4469ac5d952175cccaa24abb39119465da27bca1e4e55b
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/koi_protocol/coordinator/coordinator_event_queue.json
+  - kind: coordinator_queue_event[2].bundle.contents
+  - manifest_hash: 9c4193da1e38c6e586d3d12d5b2c2151f4c5742bfa6d95fb162d54af1c1a0bbc
+  - manifest_matches_legacy: True
+  - legacy_hash: 9c4193da1e38c6e586d3d12d5b2c2151f4c5742bfa6d95fb162d54af1c1a0bbc
+  - compact_hash: cd1110e4e1e8c6df8ca7ed1fc61a35bd6fabd36ec183131bc15c03bd278ca738
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: cd1110e4e1e8c6df8ca7ed1fc61a35bd6fabd36ec183131bc15c03bd278ca738
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[0]
+  - legacy_hash: 2f67cadfb9ec0199ff2da8b35eccba2c396d2c79bdc22bf346f56f9f613d7b55
+  - compact_hash: 21051ebbf7a044668f79392d729d12cd924ae846adb3eda5e2a06a4ce385be17
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: 21051ebbf7a044668f79392d729d12cd924ae846adb3eda5e2a06a4ce385be17
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[1]
+  - legacy_hash: 70b3fb458dc6c61c334755276fcc8c24cd0f430cca22491b9413a9f57598892c
+  - compact_hash: 6256fc681872182510ee024ed963fe0b34cf866ef3f9ddd11b5f9613147409a0
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: 6256fc681872182510ee024ed963fe0b34cf866ef3f9ddd11b5f9613147409a0
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[2]
+  - legacy_hash: b45eb04915d1010dc049cb71eadb77ee7eaff837111a8f161f8f6792bd4cc0a0
+  - compact_hash: 57743e8bca0183bba163724fd054ef9930b3d09d1a4d512535ba89c6802ac789
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: 57743e8bca0183bba163724fd054ef9930b3d09d1a4d512535ba89c6802ac789
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[3]
+  - legacy_hash: 0944f9f424cfbe005c29883327d13be4628ebdb22445007e5a236b82990aa97a
+  - compact_hash: fd0fc77ebe0af24a7d00b806481370c6971fcbc28ab3cbde051b8a38b229e634
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: fd0fc77ebe0af24a7d00b806481370c6971fcbc28ab3cbde051b8a38b229e634
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[4]
+  - legacy_hash: 721d0515568428ec042dd250f0eb0e5b556d6cb6ee833c6bbbdc0bdf002935cb
+  - compact_hash: c2ddd323ae28bb4c5d2a00e9ce33d879754608036fe684581dab92452a82aeac
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: c2ddd323ae28bb4c5d2a00e9ce33d879754608036fe684581dab92452a82aeac
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[5]
+  - legacy_hash: 18be45c3226f7e545132c4c8259f3fe0a53702fe93298fab1fe479005aa53fd2
+  - compact_hash: 998403d45c6e9d8f0588bf720e48829ad2b8dfe5b453937dd802987b4fd01508
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: 998403d45c6e9d8f0588bf720e48829ad2b8dfe5b453937dd802987b4fd01508
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[6]
+  - legacy_hash: 31684bee754568d912ecdefe6a118b9f2bacf8c10c3727a10f348f79ff971de5
+  - compact_hash: 7969e1158e968fce5976e3511bc552edc7bb0052dd27880716eed129f0fad0cc
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: 7969e1158e968fce5976e3511bc552edc7bb0052dd27880716eed129f0fad0cc
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[7]
+  - legacy_hash: bd694b98901b3e6edb1e6f4c2b8fca47d23efca043a02043297b97fd319866a6
+  - compact_hash: 2070b9101ee8589ac03cdfd72caddd472144bfb1b521ad664f56463b246919a3
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: 2070b9101ee8589ac03cdfd72caddd472144bfb1b521ad664f56463b246919a3
+  - compact_matches_canonical: True
+-
+  - source: /Users/darrenzal/projects/RegenAI/koi-sensors/sensors/discourse/output/discourse_20250913_071132.json
+  - kind: documents[8]
+  - legacy_hash: 9c53dd624ccafbf9ad89a6622eb53beeed646cfb448c278902ec4ce086c52165
+  - compact_hash: e47bc3515e60a7b681861104952950af99af7b31978b870b86025a6065f556d6
+  - canonical_engine: rid-lib.vendor.JCS
+  - canonical_hash: e47bc3515e60a7b681861104952950af99af7b31978b870b86025a6065f556d6
+  - compact_matches_canonical: True
