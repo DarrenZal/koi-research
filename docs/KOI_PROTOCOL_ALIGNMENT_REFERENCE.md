@@ -31,6 +31,7 @@ This document is the authoritative reference for RegenAI's KOI pipeline alignmen
 | Level 1 | Wire shapes (unsigned) | ✅ Complete — All 5 `/koi-net/*` endpoints |
 | Level 2 | Wire + **rid-lib hashing + RID parsing** | ✅ Complete — P0/P1a (rid-lib JCS, Z timestamps) |
 | Level 3 | Level 2 + **SignedEnvelope strict schema** | ✅ Complete — P1b (Pydantic exclude_none, ErrorResponse) |
+| Level 3+ | Level 3 + **durable state transfer** | ✅ Complete — P2a/P2b (persistent cache, retention) |
 | Level 4 | Reference-node substitution (`koi-net` NodeInterface/server) | 🔴 Not planned (maintain custom reliability features) |
 
 ### Completed phases
@@ -49,11 +50,28 @@ This document is the authoritative reference for RegenAI's KOI pipeline alignmen
 - ErrorResponse for KOI-net error semantics
 - 14 cross-verification tests passing
 
+### Completed phases (continued)
+
+**P2a — Durable State Transfer (Dec 2025):** ✅ Complete
+- Persistent bundle cache using `rid_lib.ext.Cache`
+- Write-through caching (memory + disk)
+- FORGET event deletes from cache
+- UPDATE event overwrites same RID
+- Bundles survive coordinator restarts
+- 47 tests passing (26 P2a + 21 P2b)
+
+**P2b — Retention + Monitoring (Dec 2025):** ✅ Complete
+- Max-size/max-age pruning policy
+- Protected bundles (NodeProfile, identity, config) never pruned
+- Metrics: bundle count, disk usage, alerts
+- Systemd timer for scheduled daily pruning (3 AM)
+- Environment configuration via `KOI_CACHE_*` variables
+
 ### Next priorities
 
-**P2 — Durability + scaling alignment:**
-1. Persist bundles/manifests using `rid-lib.Cache` (or equivalent durable store).
-2. Formalize proxy-node boundary patterns + provenance/CATs.
+**P3 — Optional future work:**
+1. Formalize proxy-node boundary patterns + provenance/CATs.
+2. KOI-net secure parity (NodeProfile trust chain) — only if accepting signed traffic from arbitrary nodes.
 3. Propose upstream improvements (optional ack/confirm, persistence hooks, reliability modes).
 
 ---
@@ -277,6 +295,106 @@ Additional principles synthesized from the reports + blog framing:
 - Coordinator exposes KOI-net-like POST endpoints (`/events/poll`, `/rids/fetch`, `/manifests/fetch`, `/bundles/fetch`) with optional SignedEnvelope handling.
 - SignedEnvelope verification/signing is supported when keys are configured; GET endpoints remain for legacy clients.
 - Event bridge expects KOI-like event payloads but does not enforce signed envelopes.
+
+---
+
+## Current Production Contract (Dec 2025)
+
+This section documents the exact state of the KOI-net interop surface in production.
+
+### `/koi-net/*` Endpoints
+
+| Endpoint | Method | Request Model | Response Model | SignedEnvelope |
+|----------|--------|---------------|----------------|----------------|
+| `/koi-net/events/broadcast` | POST | `EventsPayload` | `BroadcastResponse` | Optional |
+| `/koi-net/events/poll` | POST | `PollEvents` | `EventsPayload` | Optional |
+| `/koi-net/rids/fetch` | POST | `FetchRids` | `RidsPayload` | Optional |
+| `/koi-net/manifests/fetch` | POST | `FetchManifests` | `ManifestsPayload` | Optional |
+| `/koi-net/bundles/fetch` | POST | `FetchBundles` | `BundlesPayload` | Optional |
+
+**Wire format:** All `/koi-net/*` responses use strict KOI-net schemas:
+- Manifest: `{rid, timestamp, sha256_hash}` only (no size_bytes, content_type, metadata)
+- Bundle: `{manifest, contents}` only
+- Timestamps: `Z` suffix (not `+00:00`)
+
+**Note:** `/koi-net/events/poll` is read-only; use internal `/events/confirm` for delivery acknowledgment.
+
+### Node Identity
+
+**Format:** `orn:koi-net.node:<name>+<hash>`
+
+**Hash derivation:** Full 64-character hex SHA-256 of the DER-encoded public key (base64):
+```python
+node_id_hash = sha256(base64.b64decode(public_key_der_b64)).hexdigest()
+```
+
+**Current approach:** Out-of-band key distribution via `KOI_PUBLIC_KEYS_JSON` environment variable.
+
+### Persistent Bundle Cache (P2a)
+
+**Directory:** Configured via `KOI_CACHE_DIR` environment variable.
+- Default: `/opt/projects/koi-sensors/.rid_cache`
+- Production: Set in coordinator `.env`
+
+**What's persisted:** Strict rid-lib Bundle format `{manifest: {rid, timestamp, sha256_hash}, contents}`
+- Internal extras (size_bytes, content_type, metadata) are **not** persisted
+- Internal extras are reconstructed from contents on read
+
+**Cache operations:**
+- `cache.write(bundle)` — Write-through to memory + disk
+- `cache.read(rid)` — Memory-first, then disk
+- `cache.delete(rid)` — Remove from both memory and disk
+- `cache.load_all()` — Load all bundles from disk on startup
+
+### Retention Policy (P2b)
+
+**Environment variables:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `KOI_CACHE_MAX_SIZE_MB` | 500 | Maximum cache size in MB |
+| `KOI_CACHE_MAX_AGE_DAYS` | 30 | Maximum bundle age in days |
+| `KOI_CACHE_DISK_ALERT_PERCENT` | 80 | Disk usage alert threshold |
+
+**Protected RID patterns** (never pruned):
+- `orn:koi.node_profile:*` — Node profile bundles
+- `orn:koi.identity:*` — Node identity bundles
+- `orn:koi.config:*` — Configuration bundles
+
+**Pruning behavior:**
+1. Age-based pruning runs first (removes bundles older than max_age_days)
+2. Size-based pruning runs second (removes oldest bundles until under max_size_mb)
+3. Protected bundles are skipped in both phases
+
+**Systemd timer:** `koi-cache-prune.timer`
+- Runs daily at 3:00 AM
+- Executes `scripts/prune_bundle_cache.py`
+- Logs to systemd journal
+
+**Manual pruning:**
+```bash
+# Dry run
+./venv/bin/python scripts/prune_bundle_cache.py --dry-run
+
+# Metrics only
+./venv/bin/python scripts/prune_bundle_cache.py --metrics-only
+
+# Execute prune
+./venv/bin/python scripts/prune_bundle_cache.py
+```
+
+### Known Gotchas
+
+1. **`/koi-net/events/poll` is read-only**: It returns events but does NOT mark them as delivered. Use internal `/events/confirm` endpoint for acknowledgment.
+
+2. **Timestamp format**: Wire format uses `Z` suffix, internal storage may use `+00:00`. The persistent cache normalizes to `Z` on read.
+
+3. **Hash recomputation**: When returning bundles via `/koi-net/*`, the coordinator recomputes `sha256_hash` using rid-lib JCS canonicalization, even if the original event only had a legacy hash.
+
+4. **Protected bundles**: If you create bundles with RIDs matching protected patterns, they will never be pruned. Use this intentionally for identity/config data.
+
+5. **Seed script limitation**: `scripts/seed_bundle_cache.py` only seeds from `coordinator_event_queue.json`, which contains recent pending events. Historical events require a separate database backfill.
+
+---
 
 ### Audit issue status (KOI-related) — resolved
 
@@ -601,13 +719,35 @@ For P1b, we do NOT emit `_regen` metadata on wire. External nodes get strict `{m
 - Internal metadata stays in internal endpoints only
 - Future P2: Consider separate knowledge object for operational metadata if needed
 
-### Phase 3 (P2) — Durability + upstream collaboration
+### Phase 3 (P2) — Durability + retention ✅ COMPLETE (Dec 2025)
 
-1. Adopt a durable bundle/manifest cache for coordinator/full-node state transfer (`rid-lib.Cache` or equivalent)
-2. Decide whether to backfill existing DB knowledge into rid-lib Cache
-3. Formalize proxy node patterns for boundary exposure
-4. Standardize provenance/CAT receipts as verifiable knowledge objects
-5. Prepare upstream proposals:
+**P2a — Durable State Transfer:** ✅ Complete
+- `rid-lib.ext.Cache` integration for persistent bundle storage
+- Write-through caching (memory + disk)
+- Bundles survive coordinator restarts
+- `/koi-net/bundles/fetch` returns persisted bundles
+- 26 tests covering persistence, event semantics, signed persistence
+
+**P2b — Retention + Monitoring:** ✅ Complete
+- Environment-configurable retention policy (`KOI_CACHE_MAX_SIZE_MB`, `KOI_CACHE_MAX_AGE_DAYS`)
+- Protected bundle patterns for NodeProfile/identity bundles
+- Pruning script with dry-run and metrics modes
+- Systemd timer for scheduled daily pruning
+- 21 tests covering pruning, metrics, protection
+
+**Implemented in:**
+- `koi-sensors/koi_protocol/core/persistent_cache.py`
+- `koi-sensors/scripts/prune_bundle_cache.py`
+- `koi-sensors/scripts/seed_bundle_cache.py`
+- `koi-sensors/systemd/koi-cache-prune.{service,timer}`
+- `koi-sensors/tests/test_persistent_cache_p2a.py` (26 tests)
+- `koi-sensors/tests/test_cache_retention_p2b.py` (21 tests)
+
+**Deferred to P3 (optional):**
+1. Backfill existing DB knowledge into rid-lib Cache (requires separate Postgres query script)
+2. Formalize proxy node patterns for boundary exposure
+3. Standardize provenance/CAT receipts as verifiable knowledge objects
+4. Prepare upstream proposals:
    - optional ack/confirm extension,
    - persistence hooks in KOI-net node lifecycle,
    - reliability mode knobs (best-effort vs durable vs synchronous processor option)
@@ -619,10 +759,10 @@ For P1b, we do NOT emit `_regen` metadata on wire. External nodes get strict `{m
    - Artifacts: `koi-research/spikes/koi_hash_parity_spike.py`, `koi-research/spikes/koi_hash_parity_spike_output.md`
 2. ✅ **Strict SignedEnvelope interop spike** — KOI-net node signs/validates end-to-end. *COMPLETED: crypto compatible, timestamp Z vs +00:00 issue found*
    - Methodology: `koi-research/reports/KOI_PREIMPLEMENTATION_RESEARCH.md` Section 4
-3. **`/koi-net` router shim spike** — mirror strict paths without breaking internal clients. *Ready to start*
-4. **Bundle cache persistence spike** — restart durability + fetch correctness. *Ready to start*
-5. **Proxy-node "controlled subset" spike** — allowlists + policy metadata. *Deferred to P2*
-6. **Provenance/CATs spike** — content-addressed transform records. *Deferred to P2*
+3. ✅ **`/koi-net` router shim spike** — mirror strict paths without breaking internal clients. *COMPLETED: P1b*
+4. ✅ **Bundle cache persistence spike** — restart durability + fetch correctness. *COMPLETED: P2a*
+5. **Proxy-node "controlled subset" spike** — allowlists + policy metadata. *Deferred to P3*
+6. **Provenance/CATs spike** — content-addressed transform records. *Deferred to P3*
 
 ---
 
