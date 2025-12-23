@@ -65,7 +65,7 @@ This document is the authoritative reference for RegenAI's KOI pipeline alignmen
 - `koi-research/sources/blockscience/koi-net`
 
 **Current dependency status (Dec 2025):**
-- ✅ `rid-lib>=3.2.8` installed in `koi-sensors/requirements.txt` and `koi-processor/requirements.txt` (P0 complete)
+- ✅ `rid-lib==3.2.12` pinned in `koi-sensors/requirements.txt` and `koi-processor/requirements.txt` (P0.1 hygiene)
 - Sensor venvs fall back to legacy hashing if rid-lib not installed (ImportError caught in `bundle_system.py`)
 
 ### rid-lib defines the data contracts
@@ -551,6 +551,32 @@ Based on pre-implementation research findings.
 
 **Critical constraint:** Keep internal `/events/*` endpoints unchanged. Appendix F clients must continue working.
 
+#### P1 Acceptance Criteria (Definition of Done)
+
+**P1a — Level 2 Interop (strict wire, unsigned OK):**
+
+| Criterion | Category |
+|-----------|----------|
+| [ ] `/koi-net/*` endpoints implemented with schema-exact KOI-net models | Endpoints |
+| [ ] Coordinator recomputes `sha256_hash` via rid-lib JCS on `/koi-net/*` output (sensors can stay legacy) | Hashing |
+| [ ] Wire `Manifest` = strict `{rid, timestamp, sha256_hash}` only (no `size_bytes`, `content_type`, `metadata`) | Schema |
+| [ ] Timestamp serialization uses `Z` suffix on `/koi-net/*` wire output (internal storage unchanged) | Serialization |
+| [ ] Internal `/events/*` endpoints unchanged (`+00:00` timestamps, dual hashes accepted) | Compatibility |
+| [ ] Test: event broadcast with `legacy_content_hash` only → `/koi-net/events/poll` returns correct JCS `sha256_hash` | Verification |
+| [ ] Test: wire timestamps use `Z`, internal use `+00:00` | Verification |
+| [ ] Decision documented: koi-net Pydantic models (Python 3.12+) vs hand-rolled (drift risk) | Architecture |
+
+**P1b — Level 3 Interop (SignedEnvelope):**
+
+| Criterion | Category |
+|-----------|----------|
+| [ ] `koi_envelope.py` consolidated (koi-sensors version canonical, koi-processor imports) | Consolidation |
+| [ ] Wire payloads schema-exact before signing (no extra keys) | Signing |
+| [ ] Identity in envelope `source_node`/`target_node`, not in payload fields | Signing |
+| [ ] Test: cross-verify RegenAI-signed envelope with koi-net reference node | Verification |
+| [ ] Test: cross-verify koi-net-signed envelope with RegenAI verifier | Verification |
+| [ ] Downstream metadata migration documented (`koi_manifest.metadata.url` → `contents._regen.url`) | Migration |
+
 ### Phase 3 (P2) — Durability + upstream collaboration
 
 1. Adopt a durable bundle/manifest cache for coordinator/full-node state transfer (`rid-lib.Cache` or equivalent)
@@ -566,7 +592,7 @@ Based on pre-implementation research findings.
 
 1. ✅ **Hash parity spike** — compare rid-lib vs current hashing on real payloads. *COMPLETED: 100% mismatch confirmed, JCS numeric normalization identified*
    - Methodology: `koi-research/reports/KOI_PREIMPLEMENTATION_RESEARCH.md` Section 1
-   - Artifacts: `koi-research/spikes/koi_hash_parity_spike.py`, `koi-research/spikes/koi_hash_parity_spike_output.md` *(on disk, needs git commit)*
+   - Artifacts: `koi-research/spikes/koi_hash_parity_spike.py`, `koi-research/spikes/koi_hash_parity_spike_output.md`
 2. ✅ **Strict SignedEnvelope interop spike** — KOI-net node signs/validates end-to-end. *COMPLETED: crypto compatible, timestamp Z vs +00:00 issue found*
    - Methodology: `koi-research/reports/KOI_PREIMPLEMENTATION_RESEARCH.md` Section 4
 3. **`/koi-net` router shim spike** — mirror strict paths without breaking internal clients. *Ready to start*
