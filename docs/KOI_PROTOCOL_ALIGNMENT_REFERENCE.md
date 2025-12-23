@@ -11,7 +11,7 @@ This document is the authoritative reference for RegenAI's KOI pipeline alignmen
 ## Status Summary (Dec 2025)
 
 **Operational reliability track**: ✅ All services operational, KOI audit issues resolved.
-**Strict KOI-net interoperability track**: 🟡 Not yet (blocked by RID/hash/schema/identity contracts).
+**Strict KOI-net interoperability track**: ✅ Level 3 (SignedEnvelope) complete as of Dec 2025.
 
 ### Operational health (current pipeline)
 
@@ -28,21 +28,28 @@ This document is the authoritative reference for RegenAI's KOI pipeline alignmen
 
 | Interop level | Meaning | Status |
 |---|---|---|
-| Level 1 | Wire shapes (unsigned) | 🟡 Partial (endpoints exist, but data models diverge) |
-| Level 2 | Wire + **rid-lib hashing + RID parsing** | 🔴 Blocked (hashing + RID parsing mismatch) |
-| Level 3 | Level 2 + **SignedEnvelope strict schema** | 🔴 Blocked (schema extras + identity/trust conventions) |
-| Level 4 | Reference-node substitution (`koi-net` NodeInterface/server) | 🔴 Not recommended yet (reliability + runtime constraints) |
+| Level 1 | Wire shapes (unsigned) | ✅ Complete — All 5 `/koi-net/*` endpoints |
+| Level 2 | Wire + **rid-lib hashing + RID parsing** | ✅ Complete — P0/P1a (rid-lib JCS, Z timestamps) |
+| Level 3 | Level 2 + **SignedEnvelope strict schema** | ✅ Complete — P1b (Pydantic exclude_none, ErrorResponse) |
+| Level 4 | Reference-node substitution (`koi-net` NodeInterface/server) | 🔴 Not planned (maintain custom reliability features) |
 
-### Immediate priorities (synthesized from reports)
+### Completed phases
 
-**P0 — Foundation (unblocks meaningful interop):**
-1. Adopt `rid-lib` for RID parsing and JCS hashing.
-2. Separate **wire models** (strict KOI-net schemas) from **internal models** (operational fields).
+**P0 — Foundation (Dec 2025):** ✅ Complete
+- `rid-lib==3.2.12` pinned, JCS hashing for sha256_hash
+- Dual-hash support for backward compatibility
 
-**P1 — Enable SignedEnvelope interop:**
-1. Add a strict `/koi-net/*` surface (matching KOI-net's NodeServer defaults).
-2. Ensure signed payloads contain **no non-schema keys** (critical nuance).
-3. Decide security posture: "insecure signing" vs KOI-net secure parity (NodeProfile trust chain).
+**P1a — Level 2 Interop (Dec 2025):** ✅ Complete
+- `/koi-net/events/poll` with JCS hash recompute, Z timestamps
+- Schema-exact wire models
+
+**P1b — Level 3 Interop (Dec 2025):** ✅ Complete
+- `koi_envelope.py` consolidated (Pydantic models, exclude_none=True)
+- All 5 `/koi-net/*` endpoints with SignedEnvelope support
+- ErrorResponse for KOI-net error semantics
+- 14 cross-verification tests passing
+
+### Next priorities
 
 **P2 — Durability + scaling alignment:**
 1. Persist bundles/manifests using `rid-lib.Cache` (or equivalent durable store).
@@ -566,16 +573,33 @@ Based on pre-implementation research findings.
 | [ ] Test: wire timestamps use `Z`, internal use `+00:00` | Verification |
 | [ ] Decision documented: koi-net Pydantic models (Python 3.12+) vs hand-rolled (drift risk) | Architecture |
 
-**P1b — Level 3 Interop (SignedEnvelope):**
+**P1b — Level 3 Interop (SignedEnvelope): ✅ COMPLETE (Dec 2025)**
 
-| Criterion | Category |
-|-----------|----------|
-| [ ] `koi_envelope.py` consolidated (koi-sensors version canonical, koi-processor imports) | Consolidation |
-| [ ] Wire payloads schema-exact before signing (no extra keys) | Signing |
-| [ ] Identity in envelope `source_node`/`target_node`, not in payload fields | Signing |
-| [ ] Test: cross-verify RegenAI-signed envelope with koi-net reference node | Verification |
-| [ ] Test: cross-verify koi-net-signed envelope with RegenAI verifier | Verification |
-| [ ] Downstream metadata migration documented (`koi_manifest.metadata.url` → `contents._regen.url`) | Migration |
+| Criterion | Category | Status |
+|-----------|----------|--------|
+| `koi_envelope.py` consolidated (koi-sensors version canonical, koi-processor symlinks) | Consolidation | ✅ |
+| Signing uses `UnsignedEnvelope.model_dump_json(exclude_none=True)` | Signing | ✅ |
+| `source_node` and `target_node` are required KoiNetNode ORNs | Signing | ✅ |
+| `ErrorResponse` returned on invalid signature/target/key (not FastAPI default) | Errors | ✅ |
+| All 5 `/koi-net/*` endpoints implemented with SignedEnvelope support | Endpoints | ✅ |
+| Signed request → signed response (or ErrorResponse if no key) | Signing | ✅ |
+| Test: RegenAI-signed envelope verifies with koi-net bytes | Verification | ✅ |
+| Test: koi-net-signed envelope verifies with RegenAI | Verification | ✅ |
+| Test: extra fields break verification | Verification | ✅ |
+| Test: FORGET event with None manifest (exclude_none behavior) | Verification | ✅ |
+| Metadata migration decision documented (Option A: no `_regen` on wire for P1b) | Migration | ✅ |
+
+**Implemented in:**
+- `koi-sensors/shared/koi_envelope.py` (Pydantic models + exclude_none=True)
+- `koi-processor/scripts/koi_envelope.py` → symlink to koi-sensors
+- `koi-sensors/koi_protocol/coordinator/koi_coordinator.py` (/koi-net/* endpoints)
+- `koi-sensors/tests/test_koi_net_signed_envelope.py` (14 tests)
+
+**Metadata Migration Decision (Option A):**
+For P1b, we do NOT emit `_regen` metadata on wire. External nodes get strict `{manifest, contents}` bundles.
+- Rationale: Adding `_regen` to contents changes the JCS hash, breaking dedup and hash verification
+- Internal metadata stays in internal endpoints only
+- Future P2: Consider separate knowledge object for operational metadata if needed
 
 ### Phase 3 (P2) — Durability + upstream collaboration
 

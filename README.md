@@ -6,27 +6,34 @@ This repository contains the Knowledge Organization Infrastructure (KOI) impleme
 
 **KOI** is a collaborative research effort across **BlockScience**, **Metagov**, and **RMIT**, adapted and extended for Regen Network's regenerative AI infrastructure.
 
-## 🚀 Current Status (October 2025)
+## 🚀 Current Status (December 2025)
 
-**100% Complete** - Full KOI sensor-to-agent pipeline operational and tested
+**✅ COMPLETE** - Full KOI pipeline operational, Stage 6 re-extraction deployed to production
 
-### ✅ Implementation Complete - BREAKTHROUGH ACHIEVEMENT
+### Stage 6 Re-Extraction Complete (2025-12-23)
+
+| Metric | Value |
+|--------|-------|
+| Documents processed | 12,002 |
+| Entities extracted | 88,322 |
+| Relationships | 17,329 |
+| Unique entities | 30,041 |
+| Fuseki triples (production) | 165,619 |
+
+### ✅ Implementation Complete
 - **Complete KOI Pipeline**: End-to-end flow from sensors to agents fully operational
-- **KOI Event Bridge v2**: Real-time processing with RID-based deduplication and versioning
-- **BGE Server Integration**: 1024-dimensional embeddings generated via HTTP API
-- **PostgreSQL Direct Storage**: Immediate integration with Eliza agent database using isolated tables
-- **Real-time Processing**: Content processed and available within seconds of ingestion
-- **Agent RAG Access**: Processed content immediately accessible for agent queries
-- **CAT Receipt Generation**: Complete transformation provenance tracking operational
-- **Production Deployment**: Full pipeline tested and verified with real content processing
-- **Performance Metrics**: Real-time processing, immediate agent availability, complete audit trails
+- **Stage 6 Re-Extraction**: Full docs-only corpus extraction using Gemini Flash
+- **FIX-007 Predicate Consolidation**: Reduced 3,303 → 1,501 distinct predicates (-54.6%)
+- **PostgreSQL as Authoritative Store**: Fuseki rebuilt from PostgreSQL data
+- **Code↔Docs Bridge**: 16,820 code artifacts, 6,453 doc→code links
+- **AGE Graph Sync**: 5,464 stub nodes, 6,463 edges (MENTIONS + CODE_REF)
+- **Quality Gates**: All passing (no http:// URIs, no ontology# types, no self-ref triples)
 
 ### ✅ Research Foundation
-- Apache Jena Fuseki integration with ~101,903 triples (20,325 refined statements stored as reified regx:Statement with canonical categories)
-- D3.js interactive graph visualization (326+ entities)
-- Metabolic entity extraction from 1,100+ documents
-- JSON-LD to TTL conversion pipeline
-- Ontological research and unified taxonomy development
+- Apache Jena Fuseki integration with 165,619 triples (production)
+- D3.js interactive graph visualization (30,041 entities)
+- Hybrid RAG with entity/graph search integration
+- Quality improved from 62% to 99.7%
 
 ## 📖 Master Documentation
 
