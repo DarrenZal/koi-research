@@ -70,9 +70,34 @@ This document is the authoritative reference for RegenAI's KOI pipeline alignmen
 ### Next priorities
 
 **P3 — Optional future work:**
-1. Formalize proxy-node boundary patterns + provenance/CATs.
-2. KOI-net secure parity (NodeProfile trust chain) — only if accepting signed traffic from arbitrary nodes.
-3. Propose upstream improvements (optional ack/confirm, persistence hooks, reliability modes).
+1. **Formalize proxy-node boundary patterns**: Define explicit allowlists and policy metadata for exposing subsets of internal knowledge to external partners.
+2. **KOI-net secure parity (NodeProfile)**: Move beyond manual key maps.
+   - Generate a `NodeProfile` bundle containing the node's public key and identity ORN.
+   - Store this bundle in the local `rid-lib` cache under `orn:koi.node_profile:<node_id>`.
+   - Ensure it is fetchable via `/koi-net/bundles/fetch` so peer nodes can self-discover keys.
+3. **Draft Upstream Experience Report**: Formalize RegenAI's findings into a "Production Readiness" report for the BlockScience `koi-net` team (see Proposed Upstream Contributions).
+
+---
+
+## Proposed Upstream Contributions
+
+Based on RegenAI's production implementation, we recommend proposing the following to the BlockScience KOI-net maintainers:
+
+1. **Reliability/Persistence Hooks**:
+   - Recommend adding middleware or lifecycle hooks to the `NodeServer` class.
+   - Purpose: Allow implementers to add persistence (like our JSON queue/rid-lib cache) and delivery confirmation without rewriting the base server logic.
+
+2. **Python Version Compatibility**:
+   - Propose a "Lite" version of `koi-net` or a refactor to remove PEP 695 `type` aliases.
+   - Purpose: Enable adoption in environments limited to Python 3.10/3.11 (standard in many current enterprise/ML stacks).
+
+3. **Standardized Metadata Scratchpad**:
+   - Propose a standard location in `contents` (e.g., `_meta` or `_ext`) that is explicitly ignored during core protocol validation but preserved across hops.
+   - Purpose: Avoid the "strip-to-sign" friction where operational metadata must be removed to verify signatures.
+
+4. **Optional Delivery Confirmation**:
+   - Propose a standardized `/events/confirm` endpoint as an optional extension to the core 5 endpoints.
+   - Purpose: Bring "at-least-once" delivery semantics to the protocol surface for high-reliability use cases.
 
 ---
 
