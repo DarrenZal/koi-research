@@ -138,7 +138,7 @@ To begin implementation:
 ### Agent Access Layer
 
 **MCP Server** ([regen-koi-mcp](https://github.com/gaiaaiagent/regen-koi-mcp)):
-- **9 MCP Tools** - Semantic search, code graph traversal, GitHub docs, metrics
+- **16 MCP Tools** - Semantic search, code graph, entity resolution, SPARQL, GitHub docs, weekly digest, metrics
 - **Production Features** - Retry logic, circuit breakers, LRU caching, validation
 - **Hybrid Search** - Vector + graph + keyword with RRF fusion
 - **NPM Package** - Auto-updates via `npx regen-koi-mcp@latest`
