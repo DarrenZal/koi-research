@@ -1,0 +1,57 @@
+{
+  "name": "Regen Full-Stack Test Environment",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "workspaceFolder": "/workspaces/koi-research",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/koi-research,type=bind,consistency=cached",
+
+  "postCreateCommand": "verify-env",
+
+  "postStartCommand": "echo 'Ready for full-stack testing. Run: cat docs/test-protocol-full-stack.md'",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "rust-lang.rust-analyzer",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ],
+      "settings": {
+        "go.gopath": "/root/go",
+        "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
+        "python.defaultInterpreterPath": "/usr/bin/python3"
+      }
+    },
+    "codespaces": {
+      "openFiles": [
+        "docs/test-protocol-full-stack.md"
+      ]
+    }
+  },
+
+  "mounts": [
+    "source=${localWorkspaceFolder}/../regen-ledger,target=/workspaces/regen-ledger,type=bind,consistency=cached"
+  ],
+
+  "remoteEnv": {
+    "REGEN_LEDGER_PATH": "/workspaces/regen-ledger",
+    "KOI_RESEARCH_PATH": "/workspaces/koi-research"
+  },
+
+  "forwardPorts": [],
+
+  "portsAttributes": {},
+
+  "remoteUser": "root"
+}

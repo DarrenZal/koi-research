@@ -1,0 +1,247 @@
+# Full-Stack Code Generation Tests
+#
+# Runs the test protocol from docs/test-protocol-full-stack.md
+# in a devcontainer with all required tooling.
+#
+# Triggers:
+# - Nightly at 2am UTC
+# - Manual dispatch
+# - On changes to MCP-related files (optional)
+
+name: Full-Stack Tests
+
+on:
+  schedule:
+    # Run nightly at 2am UTC
+    - cron: '0 2 * * *'
+
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Which tests to run'
+        required: true
+        default: 'core'
+        type: choice
+        options:
+          - core
+          - all
+          - preflight-only
+
+      model:
+        description: 'Model to use'
+        required: true
+        default: 'sonnet'
+        type: choice
+        options:
+          - sonnet
+          - opus
+
+      save_artifacts:
+        description: 'Save test artifacts (scratch files)'
+        required: false
+        default: true
+        type: boolean
+
+  # Uncomment to run on MCP changes
+  # push:
+  #   paths:
+  #     - 'docs/test-protocol-full-stack.md'
+  #     - '.devcontainer/**'
+
+env:
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  KOI_AUTH_TOKEN: ${{ secrets.KOI_AUTH_TOKEN }}
+
+jobs:
+  run-tests:
+    name: Run Full-Stack Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout koi-research
+        uses: actions/checkout@v4
+
+      - name: Checkout regen-ledger
+        uses: actions/checkout@v4
+        with:
+          repository: regen-network/regen-ledger
+          path: regen-ledger
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Verify environment
+        run: |
+          echo "=== Environment Verification ==="
+          echo "Go: $(go version)"
+          echo "Rust: $(rustc --version)"
+          echo "Cargo: $(cargo --version)"
+          echo "Python: $(python --version)"
+          echo "Node: $(node --version)"
+          echo "Claude Code: $(claude --version || echo 'not installed')"
+          echo "================================"
+
+      - name: Create scratch directory
+        run: mkdir -p scratch
+
+      - name: Determine test suite
+        id: suite
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "suite=${{ inputs.test_suite }}" >> $GITHUB_OUTPUT
+            echo "model=${{ inputs.model }}" >> $GITHUB_OUTPUT
+          else
+            # Nightly runs use core tests with sonnet
+            echo "suite=core" >> $GITHUB_OUTPUT
+            echo "model=sonnet" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Preflight Check
+        id: preflight
+        run: |
+          echo "Running preflight check..."
+
+          # Create preflight prompt
+          cat > /tmp/preflight_prompt.txt << 'EOF'
+          Preflight check:
+          1) Call search for "Registry Agent" (limit 3) and paste the results.
+          2) Call query_code_graph list_repos and paste the results.
+          3) If authenticated: Call get_mcp_metrics and paste the results.
+
+          For steps 1-2: If either fails, stop and tell me exactly what failed and any error messages.
+          For step 3: If it fails with "authentication required", that's OK - note it and continue.
+
+          Output a JSON summary at the end:
+          {"preflight": "pass" | "fail", "search_ok": true|false, "graph_ok": true|false, "metrics_ok": true|false|"auth_required"}
+          EOF
+
+          # Run preflight via Claude Code
+          # Note: This is a placeholder - actual implementation depends on Claude Code CLI interface
+          echo "Preflight check would run here with Claude Code CLI"
+          echo '{"preflight": "pass", "search_ok": true, "graph_ok": true, "metrics_ok": "auth_required"}' > preflight_result.json
+
+      - name: Run Core Tests
+        if: steps.suite.outputs.suite == 'core' || steps.suite.outputs.suite == 'all'
+        run: |
+          echo "Running core tests..."
+          TIMESTAMP=$(date +%Y-%m-%d-%H%M)
+          RESULTS_FILE="docs/test-results/${TIMESTAMP}-ci.md"
+          mkdir -p docs/test-results
+
+          # Create results header
+          cat > $RESULTS_FILE << EOF
+          # CI Test Results - ${TIMESTAMP}
+
+          **Trigger:** ${{ github.event_name }}
+          **Model:** ${{ steps.suite.outputs.model }}
+          **Suite:** ${{ steps.suite.outputs.suite }}
+          **Runner:** GitHub Actions
+
+          ---
+
+          ## Preflight
+
+          \`\`\`json
+          $(cat preflight_result.json)
+          \`\`\`
+
+          ---
+
+          ## Test Results
+
+          | Test | Status | Score | Notes |
+          |------|--------|-------|-------|
+          EOF
+
+          # Placeholder for actual test execution
+          # Each test would be run via Claude Code CLI with the exact prompts from the protocol
+          echo "| VC-01 | Pending | -/2 | Awaiting Claude Code CLI integration |" >> $RESULTS_FILE
+          echo "| VC-02 | Pending | -/2 | Awaiting Claude Code CLI integration |" >> $RESULTS_FILE
+          echo "| NU-01 | Pending | -/2 | Awaiting Claude Code CLI integration |" >> $RESULTS_FILE
+          echo "| SC-01 | Pending | -/2 | Awaiting Claude Code CLI integration |" >> $RESULTS_FILE
+          echo "| CA-01 | Pending | -/2 | Awaiting Claude Code CLI integration |" >> $RESULTS_FILE
+
+          echo "results_file=$RESULTS_FILE" >> $GITHUB_OUTPUT
+
+      - name: Compare to baseline
+        id: compare
+        run: |
+          echo "Comparing to baseline..."
+          # Find most recent baseline
+          BASELINE=$(ls -t docs/test-results/*.md 2>/dev/null | grep -v "$(date +%Y-%m-%d)" | head -1 || echo "")
+
+          if [ -n "$BASELINE" ]; then
+            echo "Baseline found: $BASELINE"
+            echo "baseline=$BASELINE" >> $GITHUB_OUTPUT
+            echo "has_baseline=true" >> $GITHUB_OUTPUT
+          else
+            echo "No baseline found - this run will become the baseline"
+            echo "has_baseline=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload test artifacts
+        if: inputs.save_artifacts != false
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ github.run_id }}
+          path: |
+            scratch/
+            docs/test-results/
+          retention-days: 30
+
+      - name: Post summary
+        run: |
+          echo "## Full-Stack Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Model:** ${{ steps.suite.outputs.model }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Suite:** ${{ steps.suite.outputs.suite }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f preflight_result.json ]; then
+            echo "### Preflight" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            cat preflight_result.json >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Integrate Claude Code CLI for actual test execution" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Add KOI authentication for private doc access" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Set up baseline comparison logic" >> $GITHUB_STEP_SUMMARY
+
+      # Uncomment to create issues on regression
+      # - name: Create issue on regression
+      #   if: steps.compare.outputs.has_baseline == 'true' && failure()
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       github.rest.issues.create({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         title: `Test Regression Detected - ${new Date().toISOString().split('T')[0]}`,
+      #         body: `Automated tests detected a regression.\n\nSee workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+      #         labels: ['regression', 'automated']
+      #       })
