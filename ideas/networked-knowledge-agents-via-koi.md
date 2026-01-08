@@ -18,7 +18,7 @@ KOI could fill this gap by serving as the **networking and permissioning layer**
 - **Register** with KOI network + set permissions (public/protected/private/hidden)
 - **KOI handles** discovery, networking, and access control
 
-This is "KOI-net as a service" for knowledge agents—lowering the barrier from "build a KOI node from scratch" to "create a GPT and register it."
+This is "KOI-net as a service" for knowledge agents—lowering the barrier from "build a KOI node from scratch" to "build an API-accessible agent and register it."
 
 ---
 
@@ -61,6 +61,24 @@ The wrapper SDK should target:
 3. **NOT** consumer UIs (GPT Builder, Gems UI)
 
 GPTs and Gems can be thought of as **one possible front-end** for interacting with an agent—users might build there for convenience, then export/replicate the config to an API-accessible form for KOI integration.
+
+---
+
+## Realistic Opportunity Assessment
+
+Given the GPT/Gem reality check above, here's an honest assessment of what's achievable:
+
+| Timeframe | Opportunity | Audience |
+|-----------|-------------|----------|
+| **Short-term** | KOI as infrastructure for organizations that already have technical capacity to build API-accessible agents (Assistants API, Vertex AI, Claude API). Value is discovery, routing, and permissions—not simplification of agent creation. | Technical teams, orgs with developers |
+| **Medium-term** | A KOI-native agent builder that feels GPT-like but outputs API-callable agents directly. This would restore the "easy onramp" vision. | Broader adoption, less technical users |
+| **Not yet realistic** | Non-technical users "creating a GPT and registering it" with no intermediate steps. The consumer UIs (GPT Builder, Gems) don't produce API-callable outputs. | — |
+
+**The gap**: There's no shortcut that lets someone use GPT Builder's simplicity and automatically get KOI network effects. That would require either:
+- OpenAI/Google exposing consumer GPTs/Gems via API (unlikely—they want platform lock-in)
+- Building our own simple agent creation UI that outputs API-accessible agents
+
+The network effects vision is sound. The implementation path is more constrained than "connect your GPT"—but still substantially easier than building a full KOI node from scratch.
 
 ---
 
@@ -900,6 +918,7 @@ This is infrastructure we're building for ourselves anyway. Offering it to partn
 
 ## Changelog
 
+- **2026-01-08**: Added "Realistic Opportunity Assessment" section; tempered opening framing to reflect that barrier is lowered to "API-accessible agent" not "create a GPT"
 - **2026-01-07**: Initial capture from Gregory brainstorm + Darren/Claude synthesis
 - **2026-01-07**: Incorporated feedback: added agent node contract, GPT/Gem reality check, expanded permissions/auth, MVP roadmap, security/threat model, economics model
 - **2026-01-07**: Aligned with KOI-net/RID semantics: renamed "Capability Manifest" to Agent Profile Bundle, added explicit primitive mapping, clarified auth layering (node-to-node vs human-to-node), added MCP/A2A interop section
