@@ -20,7 +20,7 @@ Target: concrete enough to implement in ~1–2 weeks.
 
 - Proving overall “answer quality” across all possible prompts.
 - Training/fine-tuning.
-- Replacing product usability testing (that’s the Marie protocol).
+- Replacing product usability testing (that’s the Marie protocol in `koi-research/docs/test-protocol-full-stack.md:1`).
 
 ## System under test (SUT)
 
@@ -124,6 +124,15 @@ Organize tests into suites with different “flakiness budgets” and run cadenc
 
 **Cadence:** nightly or weekly; non-blocking initially; promote to blocking once stable.
 
+**Pinned model (v0 recommendation)**
+- Nightly: **Claude Sonnet** (lower cost + faster, good stability) with low temperature.
+- Weekly: **Claude Opus** (capability check) with the same scenario set.
+- Always record: model name/version, temperature, agent version/prompt hash, MCP server version, and corpus `indexed_at` so failures are reproducible.
+
+**Where scenarios come from**
+- Seed initial Suite D scenarios from the manual protocol: `koi-research/docs/test-protocol-full-stack.md:1`.
+- Promote only when the acceptance criteria can be checked structurally (files changed, tests run, tool calls made), not by subjective grading.
+
 ---
 
 # Golden dataset design
@@ -182,6 +191,22 @@ Leverage and update the existing gold set:
 - `regen-koi-mcp/evals/gold_set.json`
 
 Note: some query types referenced there (e.g., `docs_mentioning`, `list_keepers`, `list_messages`) should be treated as **contract tests** first, because mismatches currently occur.
+
+---
+
+# Manual → Automated feedback loop (how the two docs connect)
+
+Use the manual protocol to discover “high-signal” prompts, then convert them into automated coverage:
+- **VC-02** (query_code_graph mismatch) → Suite A (contract test: schema enum ↔ backend support)
+- **CA-01** (basket token helper) → Suite B (retrieval: expected docs in top-k) + optional Suite D (generate README structure)
+- **NU-01** (upgrade handler scaffold) → Suite D (repo edit + `go test` executed)
+- **VC-01** (tiny CLI + `unittest`) → Suite D (file creation + tests executed)
+- **CA-02** (registry report template) → Suite D (required headings/checklists present)
+
+Promotion checklist:
+1. Copy the exact manual prompt.
+2. Write explicit acceptance checks (deterministic where possible).
+3. Add to the suite with a baseline run and thresholds.
 
 ---
 
@@ -345,10 +370,22 @@ Recommended workflow integration:
 
 ---
 
-# Open questions / decisions needed
+# Ownership (make it someone’s job)
 
-1. **Where to run evals**: GitHub Actions vs a dedicated nightly runner VM (rate limiting, network access).
-2. **Auth in CI**: do we provision a limited-scope service account/token for private Notion retrieval tests?
-3. **Environment targets**: staging endpoint(s) vs prod; what is the expected indexing freshness SLA?
-4. **Tool output format**: do we standardize “raw JSON for eval harness” for all tools (recommended)?
+Suggested initial ownership (edit as needed):
+- **Eval framework DRI (engineering):** Darren (build/maintain harness, CI wiring, thresholds, incident triage)
+- **Gold set + scenario curator (product):** Marie (manual test intake → candidate prompts), with engineering support to convert into automated checks
+- **Weekly review:** 15 minutes in Gaia AI standup to review the latest report and decide: fix / adjust thresholds / update gold set
 
+---
+
+# Open questions (prioritized)
+
+## P0 (blocks Week 1)
+1. **Where to run evals:** GitHub Actions vs a dedicated nightly runner VM (rate limiting, network access).
+2. **Environment targets:** staging endpoint(s) vs prod (and which is the “baseline of record”).
+3. **Tool output format:** standardize “raw JSON for eval harness” across tools (recommended).
+
+## P1 (can land after harness works)
+4. **Auth in CI:** do we provision a limited-scope token for private Notion retrieval tests, or keep those as manual-only?
+5. **Model pinning details:** confirm exact model IDs for “Sonnet”/“Opus”, temperature, and any provider credentials for scheduled runs.

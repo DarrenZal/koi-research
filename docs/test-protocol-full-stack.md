@@ -26,7 +26,7 @@ This protocol is designed so a non-technical PM can run repeatable tests and pro
 ### Where to submit results (after you run tests)
 Pick the simplest option available to you:
 - **Option A (preferred):** Paste each completed “Test Result” block into a single Notion page titled `Full-Stack Codegen Test Results — <YYYY-MM-DD>` and share the link in the Gaia AI team channel, tagging Darren.
-- **Option B (if you’re comfortable with git):** Create a markdown file `koi-research/docs/test-results/<YYYY-MM-DD>-marie.md`, paste all results blocks, and open a PR. Share the PR link in the Gaia AI team channel.
+- **Option B (if you’re comfortable with git):** Create `koi-research/docs/test-results/` (if needed), then add `koi-research/docs/test-results/<YYYY-MM-DD>-marie.md` with all results blocks and open a PR. Share the PR link in the Gaia AI team channel.
 
 ### Preflight prompt (copy/paste)
 Use this once at the beginning of a testing session to confirm the stack is working:
@@ -35,13 +35,13 @@ Use this once at the beginning of a testing session to confirm the stack is work
 Preflight check:
 1) Call search for "Registry Agent" (limit 3) and paste the results.
 2) Call query_code_graph list_repos and paste the results.
-3) If authenticated: Call get_mcp_metrics and paste the results.
+3) If available: Call get_mcp_metrics and paste the results.
 
 For steps 1-2: If either fails, stop and tell me exactly what failed and any error messages.
 For step 3: If it fails with "authentication required", that's OK for public data testing - note it and continue.
 ```
 
-**Note:** `get_mcp_metrics` requires authentication. If you're only testing public data, you can skip it. If you need internal docs or full metrics, authenticate first (ask "can you authenticate me?").
+**Note:** Some environments may require authentication for `get_mcp_metrics`. If it fails, note the error and continue with steps 1–2.
 
 ## How to run each test (important for consistency)
 
