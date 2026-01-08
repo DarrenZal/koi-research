@@ -26,7 +26,7 @@ This is "KOI-net as a service" for knowledge agents—lowering the barrier from 
 
 | Layer | Status | Providers |
 |-------|--------|-----------|
-| **Agent creation** | Solved (easy) | OpenAI (GPTs), Google (Gems), Anthropic (Claude), custom RAG |
+| **Agent creation** | Solved (easy) | OpenAI (GPTs), Google Gems, Anthropic (Claude), custom RAG |
 | **Agent networking** | Unsolved | ??? |
 | **Knowledge permissioning** | Unsolved | ??? |
 
@@ -36,6 +36,131 @@ Commercial providers commoditized agent creation. But there's no good way to:
 - Query across multiple specialized agents in a coordinated way
 
 **KOI could fill this gap**—not by competing on agent creation, but by providing the connective tissue.
+
+---
+
+## GPT/Gem Reality Check
+
+**Important architectural clarification**: Custom GPTs (ChatGPT UI) and Google Gems aren't reliably callable or embeddable via API. The "wrapper" we build should target **API-accessible agent definitions**, not the consumer UIs.
+
+### What's Actually Wrappable
+
+| Platform | Consumer UI | API-Accessible | Wrap This |
+|----------|-------------|----------------|-----------|
+| OpenAI | Custom GPTs | Assistants API | ✅ Assistants API |
+| Google | Gems | Vertex AI Agents | ✅ Vertex AI |
+| Anthropic | Claude Projects | Claude API + system prompts | ✅ API |
+| Custom | — | RAG pipelines, LangChain, etc. | ✅ Direct integration |
+
+### Design Implication
+
+The wrapper SDK should target:
+1. **Agent definitions** (system prompt + tools + retrieval config)
+2. **API endpoints** (Assistants API, Vertex AI, direct LLM APIs)
+3. **NOT** consumer UIs (GPT Builder, Gems UI)
+
+GPTs and Gems can be thought of as **one possible front-end** for interacting with an agent—users might build there for convenience, then export/replicate the config to an API-accessible form for KOI integration.
+
+---
+
+## Agent Node Contract
+
+For agents to participate in the network, they need a standardized interface. This section defines the minimal contract.
+
+### Capability Manifest
+
+Each agent node publishes a manifest describing what it can do:
+
+```yaml
+# Agent Capability Manifest (draft schema)
+agent_id: "orn:koi-net.agent:soil-carbon-expert+uuid"
+name: "Soil Carbon Methodology Expert"
+description: "Specialized in soil carbon measurement, MRV protocols, and regenerative agriculture practices"
+version: "1.0.0"
+
+# What this agent knows about
+topics:
+  - soil_carbon
+  - mrv_methodology
+  - regenerative_agriculture
+  - grassland_ecosystems
+
+# Input/output contract
+interface:
+  input_types:
+    - natural_language_query
+    - structured_query  # optional
+  output_format: "koi_response"  # see response schema below
+  max_context_length: 8000
+  supports_streaming: false
+
+# Operational characteristics
+operational:
+  avg_latency_ms: 2000
+  cost_tier: "medium"  # low/medium/high/premium
+  rate_limit: 100  # queries per hour
+  availability: "best_effort"  # or "sla_99" etc.
+
+# Auth requirements
+auth:
+  required: true
+  methods: ["oidc", "api_key"]
+
+# Provenance
+provenance:
+  owner: "Land Trust XYZ"
+  created: "2026-01-07"
+  last_updated: "2026-01-07"
+  knowledge_sources:
+    - type: "document_collection"
+      description: "Internal methodology docs and research papers"
+    - type: "structured_data"
+      description: "5 years of monitoring data"
+```
+
+### Response Format
+
+Responses must include RIDs/evidence, not just prose:
+
+```yaml
+# KOI Agent Response Schema (draft)
+response:
+  query_id: "uuid"
+  agent_id: "orn:koi-net.agent:soil-carbon-expert+uuid"
+  timestamp: "2026-01-07T12:00:00Z"
+
+  # The actual answer
+  content:
+    text: "Based on the monitoring data from similar grassland projects..."
+    confidence: 0.85  # optional
+
+  # Evidence/citations - REQUIRED
+  evidence:
+    - rid: "orn:regen.document:methodology-doc-123"
+      relevance: 0.92
+      excerpt: "Section 3.2 specifies that soil samples should be taken at 0-30cm depth..."
+    - rid: "orn:regen.data:monitoring-batch-456"
+      relevance: 0.78
+      excerpt: null  # structured data, no excerpt
+
+  # What the agent doesn't know
+  limitations:
+    - "No data for East African grasslands specifically; extrapolating from Southern African projects"
+    - "Monitoring data is from 2020-2024; recent climate shifts may affect applicability"
+
+  # Processing metadata
+  metadata:
+    tokens_used: 1500
+    latency_ms: 1823
+    model: "claude-3-opus"
+```
+
+### Key Principles
+
+1. **Evidence required**: Responses must cite RIDs, not just generate prose
+2. **Limitations explicit**: Agents must surface what they don't know
+3. **Provenance traceable**: Every claim links to source material
+4. **Structured + natural**: Support both human-readable and machine-parseable outputs
 
 ---
 
@@ -49,22 +174,89 @@ KOI-net already supports this pattern. From the spec:
 
 A GPT or Gem wrapped in a KOI-compliant interface is a valid node. The protocol is agnostic to internal implementations—it only cares about the standardized endpoints.
 
-### Permissions Model
-
-Gregory's framing maps to existing KOI concepts:
-
-| Permission Level | Description | KOI Concept |
-|------------------|-------------|-------------|
-| **Full Commons** | Open to all network participants | Public node, unrestricted queries |
-| **Private Subgraph** | Visible only within a boundary | Access-controlled proxy node |
-| **Public Access** | Discoverable but query-restricted | Public metadata, permissioned content |
-
 ### Fractal Architecture
 
 KOI-net's fractal nature means:
 - An individual's GPT can be a node
 - An organization's constellation of agents can appear as a single node to outsiders
 - Networks of networks can form organically
+
+---
+
+## Permissions & Access Control
+
+### Beyond Commons/Private/Public
+
+The conceptual model (commons/private/public) needs concrete implementation:
+
+### Authentication (AuthN)
+
+Who is making the request?
+
+| Method | Use Case | Implementation |
+|--------|----------|----------------|
+| **OIDC** | Human users, org SSO | Standard OAuth2/OIDC flow |
+| **mTLS** | Node-to-node | Mutual TLS with node certificates |
+| **API Keys** | Simple integrations | Scoped keys with rotation |
+| **DID Auth** | Decentralized identity | For future P2P scenarios |
+
+### Authorization (AuthZ)
+
+What are they allowed to do?
+
+```yaml
+# Example ABAC Policy
+policy:
+  name: "land-trust-data-access"
+
+  rules:
+    # Public methodology - anyone can query
+    - resource: "methodology/*"
+      action: "query"
+      effect: "allow"
+      conditions: []
+
+    # Monitoring data - only verified partners
+    - resource: "monitoring-data/*"
+      action: "query"
+      effect: "allow"
+      conditions:
+        - attribute: "requester.org_type"
+          operator: "in"
+          value: ["verified_partner", "registry_admin"]
+        - attribute: "requester.has_nda"
+          operator: "equals"
+          value: true
+
+    # Raw data export - only internal
+    - resource: "monitoring-data/*"
+      action: "export"
+      effect: "allow"
+      conditions:
+        - attribute: "requester.org_id"
+          operator: "equals"
+          value: "land-trust-xyz"
+```
+
+### Access Control Features
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **Group-based access** | Define groups (partners, public, internal) | MVP |
+| **Attribute-based (ABAC)** | Fine-grained rules on requester/resource attributes | V2 |
+| **Rate limiting** | Per-requester, per-group, per-node | MVP |
+| **Quota management** | Monthly query limits, cost caps | MVP |
+| **Audit logging** | Who queried what, when, response summary | MVP |
+| **Public metadata / private content** | Discoverable but not queryable without auth | MVP |
+
+### Visibility Levels (Refined)
+
+| Level | Discovery | Query | Use Case |
+|-------|-----------|-------|----------|
+| **Public** | ✅ Anyone | ✅ Anyone | Open knowledge goods |
+| **Protected** | ✅ Anyone | 🔐 Authenticated | Discoverable but gated |
+| **Private** | 🔐 Group only | 🔐 Group only | Internal org knowledge |
+| **Hidden** | ❌ None | 🔐 Direct invite | Sensitive, unlisted |
 
 ---
 
@@ -110,6 +302,181 @@ KOI-net supports all three. Choice depends on use case.
 
 ---
 
+## Security & Threat Model
+
+### Threat Categories
+
+| Threat | Description | Risk Level |
+|--------|-------------|------------|
+| **Prompt injection** | Malicious queries try to manipulate agent behavior | High |
+| **Data exfiltration** | Queries designed to extract private knowledge | High |
+| **Spam nodes** | Low-quality agents flooding the network | Medium |
+| **Knowledge poisoning** | Agents returning false/misleading information | High |
+| **Denial of service** | Overwhelming nodes with queries | Medium |
+| **Identity spoofing** | Pretending to be a trusted node/user | Medium |
+
+### Mitigations
+
+#### Prompt Injection Defense
+- **Least-privilege outputs**: Agents only return what's explicitly in their knowledge base
+- **Structured response format**: Enforce schema compliance, reject free-form outputs
+- **Input sanitization**: Filter/escape potentially malicious query patterns
+- **Allowlisted tools**: Agents can only call pre-approved external tools
+
+#### Data Exfiltration Prevention
+- **Query logging + anomaly detection**: Flag unusual query patterns
+- **Rate limiting**: Prevent bulk extraction
+- **Response size limits**: Cap amount of data per response
+- **Differential privacy**: For aggregate queries over sensitive data (advanced)
+
+#### Spam/Quality Control
+- **Node registration review**: Manual or automated vetting before joining network
+- **Signed manifests**: Cryptographic proof of node identity and capability claims
+- **Reputation signals**: Track query success rates, user feedback
+- **Stake/deposit**: Economic skin-in-the-game for node operators (optional)
+
+#### Knowledge Poisoning Defense
+- **Evidence requirements**: Responses must cite RIDs—no unsourced claims
+- **Source verification**: RIDs link to verifiable source material
+- **Cross-validation**: Route queries to multiple agents, flag disagreements
+- **Human oversight**: Flag low-confidence or high-stakes responses for review
+
+#### Infrastructure Protection
+- **DDoS protection**: Standard CDN/WAF for public endpoints
+- **mTLS for node-to-node**: Authenticated connections between nodes
+- **Circuit breakers**: Nodes can disconnect from misbehaving peers
+
+### Security Principles
+
+1. **Defense in depth**: Multiple layers, no single point of failure
+2. **Least privilege**: Nodes/users get minimum necessary access
+3. **Audit everything**: Comprehensive logging for forensics
+4. **Fail secure**: Default deny, explicit allow
+5. **Assume breach**: Design for detection and containment, not just prevention
+
+---
+
+## Economics Model
+
+### Cost Components
+
+| Component | Who Pays Today | Options |
+|-----------|----------------|---------|
+| **LLM inference** | Node operator | BYO API key, network subsidy, query fees |
+| **Infrastructure** | Regen (coordinator) | Node fees, grants, freemium |
+| **Bandwidth** | Node operator | Included in node fee, or metered |
+| **Storage** | Node operator | Local responsibility |
+
+### Economic Models
+
+#### Model A: BYO API Key (Decentralized Costs)
+- Each node operator pays their own LLM costs
+- No money flows through the network
+- **Pro**: Simple, no financial infrastructure needed
+- **Con**: No incentive to serve others' queries
+
+#### Model B: Query Fees (Marketplace)
+- Requesters pay per query (or per token)
+- Node operators earn for serving queries
+- **Pro**: Incentivizes participation, quality
+- **Con**: Complex payment infrastructure, friction
+
+#### Model C: Subscription/Quota (Network Membership)
+- Organizations pay membership fee
+- Get quota of queries across network
+- **Pro**: Predictable costs, simple UX
+- **Con**: Requires central treasury management
+
+#### Model D: Hybrid
+- Free tier for public/commons knowledge
+- Paid tier for premium/private access
+- Credits/tokens for heavy users
+- **Pro**: Balances accessibility and sustainability
+- **Con**: Complexity
+
+### Cost Visibility
+
+Regardless of model, costs should be **transparent**:
+
+```yaml
+# Query cost breakdown (example)
+query_cost:
+  total: 0.02  # USD
+  breakdown:
+    routing: 0.001
+    agent_inference: 0.015
+    synthesis: 0.004
+  paid_by: "requester_org"
+  charged_to: "monthly_quota"
+```
+
+### MVP Approach
+
+Start with **Model A (BYO API Key)** for simplicity:
+- Node operators bring their own API keys
+- No payments infrastructure needed
+- Track usage metrics for future monetization
+- Iterate based on actual usage patterns
+
+---
+
+## MVP Roadmap
+
+### Phase 1: Foundation (Wrapper SDK + Discovery)
+
+**Goal**: Enable agents to join the network and be discovered.
+
+**Deliverables**:
+- [ ] Wrapper SDK for common platforms (Assistants API, Vertex AI, direct LLM)
+- [ ] Agent capability manifest schema
+- [ ] Registration flow (CLI or simple UI)
+- [ ] Discovery index (searchable directory of registered agents)
+- [ ] Basic authn (API keys)
+
+**Success criteria**: 5+ agents registered and discoverable.
+
+### Phase 2: Basic Routing
+
+**Goal**: Enable queries to find relevant agents.
+
+**Deliverables**:
+- [ ] Query router (manifest search → dispatch)
+- [ ] Single-agent query flow (query → route → respond)
+- [ ] Response format enforcement (evidence/RIDs required)
+- [ ] Rate limiting + basic abuse prevention
+- [ ] Audit logging
+
+**Success criteria**: End-to-end query flow working, <3s latency.
+
+### Phase 3: Multi-Agent Synthesis
+
+**Goal**: Queries can draw on multiple agents with attribution.
+
+**Deliverables**:
+- [ ] Multi-agent dispatch (parallel queries)
+- [ ] Response synthesis (combine answers with attribution)
+- [ ] Conflict detection (flag disagreements)
+- [ ] Confidence scoring
+- [ ] ABAC policy engine
+
+**Success criteria**: Cross-organizational query working (e.g., Scenario 3).
+
+### Phase 4: Production Hardening
+
+**Goal**: Ready for real-world deployment.
+
+**Deliverables**:
+- [ ] Full OIDC integration
+- [ ] mTLS for node-to-node
+- [ ] Comprehensive security audit
+- [ ] Economics/billing infrastructure (if needed)
+- [ ] SLA monitoring and alerting
+- [ ] Federation support (multiple coordinators)
+
+**Success criteria**: Partner organizations running production workloads.
+
+---
+
 ## Practical Scenarios
 
 ### Scenario 1: Partner Organization
@@ -119,7 +486,8 @@ A land trust wants to share their monitoring methodologies but protect proprieta
 1. They create a GPT loaded with their methodology docs and public reports
 2. They (or we help them) wrap it as a KOI proxy node
 3. They set permissions:
-   - "Commons": General methodology questions
+   - "Public": General methodology questions
+   - "Protected": Detailed monitoring protocols (authenticated partners only)
    - "Private": Raw monitoring data, internal assessments
 4. Other network agents can discover and query their public expertise
 
@@ -166,11 +534,11 @@ The value is in the connections, not the individual nodes.
 
 ### What We'd Need to Build
 
-1. **GPT/Gem wrapper SDK**: Standardized way to expose commercial AI agents as KOI proxy nodes
+1. **Agent wrapper SDK**: Standardized way to expose API-accessible agents as KOI proxy nodes
 2. **Registration flow**: User-friendly onboarding (vs. current "build a node from scratch")
 3. **Permissions UI**: Set and manage access controls without touching code
 4. **Discovery service**: How do agents find each other?
-5. **Query routing**: How do network-level queries get distributed to relevant agents?
+5. **Query router**: How do network-level queries get distributed to relevant agents?
 
 ### What Already Exists
 
@@ -187,19 +555,19 @@ The protocol exists. What's missing is the user-facing layer that makes particip
 
 ## Open Questions
 
-1. **Discovery mechanics**: How do agents advertise their capabilities? How do queries find relevant agents?
+1. **Discovery mechanics**: How do agents advertise their capabilities? How do queries find relevant agents? (Addressed in MVP Phase 1-2)
 
-2. **Query routing**: Does a central router dispatch queries, or is it emergent/P2P?
+2. **Query routing**: Does a central router dispatch queries, or is it emergent/P2P? (Start centralized, evolve to federated)
 
-3. **Response synthesis**: When multiple agents contribute to an answer, how is it combined? Who does the synthesis?
+3. **Response synthesis**: When multiple agents contribute to an answer, how is it combined? Who does the synthesis? (Addressed in MVP Phase 3)
 
-4. **Economics**: Is there a fee/incentive structure for contributing knowledge to the network?
+4. **Economics**: Is there a fee/incentive structure for contributing knowledge to the network? (Start with BYO API key, iterate)
 
-5. **Quality/trust signals**: How do you know if an agent's knowledge is reliable? Reputation system?
+5. **Quality/trust signals**: How do you know if an agent's knowledge is reliable? Reputation system? (Evidence requirements + future reputation layer)
 
-6. **Versioning**: How do you handle agents whose knowledge becomes outdated?
+6. **Versioning**: How do you handle agents whose knowledge becomes outdated? (Manifest versioning + staleness signals)
 
-7. **Commercial terms**: If someone's GPT is queried 10,000 times via the network, who pays the OpenAI API costs?
+7. **Commercial terms**: If someone's GPT is queried 10,000 times via the network, who pays the OpenAI API costs? (See Economics Model section)
 
 ---
 
@@ -233,3 +601,4 @@ This is infrastructure we're building for ourselves anyway. Offering it to partn
 ## Changelog
 
 - **2026-01-07**: Initial capture from Gregory brainstorm + Darren/Claude synthesis
+- **2026-01-07**: Incorporated feedback: added agent node contract, GPT/Gem reality check, expanded permissions/auth, MVP roadmap, security/threat model, economics model
