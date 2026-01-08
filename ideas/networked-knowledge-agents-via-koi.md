@@ -24,16 +24,17 @@ This is "KOI-net as a service" for knowledge agents—lowering the barrier from 
 
 ## The Market Gap
 
-| Layer | Status | Providers |
-|-------|--------|-----------|
-| **Agent creation** | Solved (easy) | OpenAI (GPTs), Google Gems, Anthropic (Claude), custom RAG |
-| **Agent networking** | Unsolved | ??? |
-| **Knowledge permissioning** | Unsolved | ??? |
+| Layer | Status | Examples |
+|-------|--------|----------|
+| **Agent creation** | Solved (easy) | OpenAI (GPTs/Assistants), Google (Gems/Vertex), Anthropic (Claude), custom RAG |
+| **Agent-to-agent interop (tasks/messages)** | Emerging | Google Agent-to-Agent (A2A), other emerging protocols |
+| **Tool/context interop (LLM ↔ tools/data)** | Emerging | Anthropic Model Context Protocol (MCP), other tool-calling standards |
+| **Permissioned cross-org knowledge networks** | Unsolved | This is KOI's focus |
 
-Commercial providers commoditized agent creation. But there's no good way to:
+Commercial providers commoditized agent creation, and interoperability standards are emerging. But there's still no good way to:
 - Have agents discover each other across organizations
-- Share knowledge between agents with appropriate access controls
-- Query across multiple specialized agents in a coordinated way
+- Share knowledge between agents with verifiable provenance (RIDs/evidence) and appropriate access controls
+- Query across multiple specialized agents in a coordinated way (routing + synthesis)
 
 **KOI could fill this gap**—not by competing on agent creation, but by providing the connective tissue.
 
@@ -99,12 +100,12 @@ orn:koi-net.agent:<name>+<pubkey-hash>
 **Reference format**:
 - `<name>`: Human-readable identifier (lowercase, hyphens allowed)
 - `+`: Separator
-- `<pubkey-hash>`: SHA-256 hash of the owning node's public key (truncated to 12 hex chars)
+- `<pubkey-hash>`: SHA-256 hex hash of the owning node's public key (64 hex chars, like KOI-net node RIDs)
 
 **Examples**:
 ```
-orn:koi-net.agent:soil-carbon-expert+a1b2c3d4e5f6d4e5f6
-orn:koi-net.agent:regen-registry-qa+f6e5d4c3b2a1
+orn:koi-net.agent:soil-carbon-expert+0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+orn:koi-net.agent:regen-registry-qa+fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
 ```
 
 **Stability rules**:
@@ -124,7 +125,7 @@ Each agent in the network is represented as a RIDed knowledge object:
 
 | Concept | KOI-net Primitive | Example |
 |---------|-------------------|---------|
-| Agent identity | RID | `orn:koi-net.agent:soil-carbon-expert+a1b2c3d4e5f6d4e5f6` |
+| Agent identity | RID | `orn:koi-net.agent:soil-carbon-expert+0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef` |
 | Agent profile | Bundle | Manifest (rid + timestamp + hash) + Contents (profile JSON) |
 | Profile schema | Bundle contents | The "Agent Profile" schema defined below |
 
@@ -204,7 +205,7 @@ Responses must include RIDs/evidence, not just prose:
 # KOI Agent Response Schema (draft)
 response:
   query_id: "uuid"
-  agent_rid: "orn:koi-net.agent:soil-carbon-expert+a1b2c3d4e5f6"
+  agent_rid: "orn:koi-net.agent:soil-carbon-expert+0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
   timestamp: "2026-01-07T12:00:00Z"
 
   # The actual answer
@@ -293,6 +294,20 @@ KOI-net's fractal nature means:
 - An individual's GPT can be a node
 - An organization's constellation of agents can appear as a single node to outsiders
 - Networks of networks can form organically
+
+### Evidence: KOI-net Demo Data Flow
+
+The KOI-net demo described in the BlockScience KOI-net preview already outlines an end-to-end pipeline for distributed knowledge processing:
+
+1. Collection: Sensor nodes fetch external data
+2. Discovery: Sensors register with a Coordinator
+3. Exchange: RIDs facilitate standardized communication
+4. Processing: Event handlers transform data
+5. Storage: Processed data is indexed
+6. Access: CLI/REST interfaces provide query capabilities
+7. Monitoring: Continuous updates create a live stream
+
+This proposal layers "networked knowledge agents" on top of that foundation: representing agents as RIDed Bundles, coordinating via FUN events, and serving permissioned query/synthesis workloads.
 
 ---
 
