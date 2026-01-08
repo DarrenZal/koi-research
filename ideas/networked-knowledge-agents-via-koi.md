@@ -15,7 +15,7 @@ Commercial AI platforms (OpenAI GPTs, Google Gems, Claude projects) have made it
 KOI could fill this gap by serving as the **networking and permissioning layer** for heterogeneous knowledge agents—regardless of how they're built internally. The value proposition:
 
 - **Create** knowledge agent using GPT/Gem/whatever tool works for you
-- **Register** with KOI network + set permissions (commons/private/public)
+- **Register** with KOI network + set permissions (public/protected/private/hidden)
 - **KOI handles** discovery, networking, and access control
 
 This is "KOI-net as a service" for knowledge agents—lowering the barrier from "build a KOI node from scratch" to "create a GPT and register it."
@@ -88,13 +88,43 @@ class Bundle(BaseModel):
 
 What we previously called "Capability Manifest" is actually the **contents** of an Agent Profile Bundle.
 
+### Agent RID Type Definition
+
+Agents use the `orn:koi-net.agent` namespace with a specific reference format:
+
+```
+orn:koi-net.agent:<name>+<pubkey-hash>
+```
+
+**Reference format**:
+- `<name>`: Human-readable identifier (lowercase, hyphens allowed)
+- `+`: Separator
+- `<pubkey-hash>`: SHA-256 hash of the owning node's public key (truncated to 12 hex chars)
+
+**Examples**:
+```
+orn:koi-net.agent:soil-carbon-expert+a1b2c3d4e5f6d4e5f6
+orn:koi-net.agent:regen-registry-qa+f6e5d4c3b2a1
+```
+
+**Stability rules**:
+- The pubkey-hash ties agent identity to its owning node's cryptographic identity
+- If a node's keys rotate, the agent RID changes (requires FORGET + NEW)
+- Name collisions are prevented by the pubkey-hash suffix
+- Agents cannot be transferred between nodes without re-registration
+
+**Why pubkey-hash?** This mirrors KOI-net node RIDs (`orn:koi-net.node:name+<hash>`) and ensures:
+1. Agent identity is cryptographically bound to a node
+2. No central registry needed to prevent collisions
+3. Ownership is verifiable from the RID itself
+
 ### Agent as RIDed Bundle
 
 Each agent in the network is represented as a RIDed knowledge object:
 
 | Concept | KOI-net Primitive | Example |
 |---------|-------------------|---------|
-| Agent identity | RID | `orn:koi-net.agent:soil-carbon-expert+a1b2c3` |
+| Agent identity | RID | `orn:koi-net.agent:soil-carbon-expert+a1b2c3d4e5f6d4e5f6` |
 | Agent profile | Bundle | Manifest (rid + timestamp + hash) + Contents (profile JSON) |
 | Profile schema | Bundle contents | The "Agent Profile" schema defined below |
 
@@ -174,7 +204,7 @@ Responses must include RIDs/evidence, not just prose:
 # KOI Agent Response Schema (draft)
 response:
   query_id: "uuid"
-  agent_rid: "orn:koi-net.agent:soil-carbon-expert+a1b2c3"
+  agent_rid: "orn:koi-net.agent:soil-carbon-expert+a1b2c3d4e5f6"
   timestamp: "2026-01-07T12:00:00Z"
 
   # The actual answer
@@ -209,6 +239,41 @@ response:
 2. **Bundles for state**: Agent profiles are Bundles (manifest + contents)
 3. **Events for coordination**: NEW/UPDATE/FORGET signal network state changes
 4. **Evidence required**: Responses cite RIDs, not just generate prose
+
+### Query Routing Model
+
+**Important clarification**: KOI-net is primarily object/event-oriented (Bundles, NEW/UPDATE/FORGET). How do queries fit?
+
+**Queries are RPC (out-of-band)**:
+- Query requests use standard HTTP/RPC to agent endpoints
+- Not modeled as RIDed bundles or events
+- This is pragmatic: queries are ephemeral, high-volume, latency-sensitive
+
+**Responses can be RIDed bundles (optional)**:
+- For auditability: response can be stored as a Bundle with RID
+- For caching: repeated queries can return cached response RID
+- For attribution: multi-agent synthesis can reference source response RIDs
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Query Flow                                │
+│                                                              │
+│   Query (RPC)           Response (RPC or RIDed Bundle)      │
+│   ──────────►  Agent   ─────────────────────────────►       │
+│                 Node                                         │
+│                                                              │
+│   - HTTP POST           - Inline JSON (fast, ephemeral)     │
+│   - Not a Bundle        - OR Bundle RID (auditable, cached) │
+│   - Not an event        - Response Bundle stored locally    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**State changes still use events**:
+- Agent registration: NEW event with profile Bundle
+- Agent updates: UPDATE event
+- Agent removal: FORGET event
+
+This hybrid model balances KOI-net's object-oriented design with practical query latency requirements.
 
 ---
 
@@ -281,16 +346,47 @@ Human users querying the network need a separate auth mechanism:
 3. Node-to-node communication uses signed envelopes (Layer 1)
 4. Target nodes enforce access policies based on human's identity/groups
 
+### Gateway Trust Model
+
+**Critical question**: When a gateway forwards "user@org.com, groups: [verified_partner]", how does the target node trust this claim?
+
+**Option A: Trust the gateway node (simpler)**
+- Target node trusts claims from known gateway nodes
+- Gateway node's signed envelope proves *it* made the claim
+- Target trusts gateway to have verified the human
+- **Risk**: Compromised gateway can impersonate any user
+
+**Option B: Signed attestation (more secure)**
+- Gateway includes a signed attestation in the envelope payload:
+  ```yaml
+  user_attestation:
+    identity: "user@org.com"
+    groups: ["verified_partner"]
+    oidc_issuer: "https://auth.regen.network"
+    oidc_sub: "auth0|abc123"
+    issued_at: "2026-01-07T12:00:00Z"
+    expires_at: "2026-01-07T13:00:00Z"
+    gateway_signature: "<sig over above fields>"
+  ```
+- Target node can verify:
+  1. Gateway's signature on the attestation
+  2. Attestation hasn't expired
+  3. (Optionally) Validate against OIDC issuer's JWKS
+
+**Recommendation**: Start with Option A for MVP (trust gateway nodes), evolve to Option B for production. The signed attestation provides defense-in-depth without requiring target nodes to integrate directly with OIDC.
+
 ### Auth Flow Example
 
 ```
-Human (OIDC) → Gateway Node → [Signed Envelope] → Target Agent Node
-                   ↓
-           "Query on behalf of user@org.com,
-            groups: [verified_partner]"
-                   ↓
-           Target node checks ABAC policy,
-           returns permitted knowledge
+Human (OIDC) → Gateway Node → [Signed Envelope + User Attestation] → Target Agent Node
+                   ↓                                                        ↓
+           Gateway verifies                                    Target verifies:
+           OIDC token, issues                                  1. Envelope signature (gateway)
+           signed attestation                                  2. Attestation signature (gateway)
+                                                               3. Attestation not expired
+                                                               4. ABAC policy check
+                                                                        ↓
+                                                               Returns permitted knowledge
 ```
 
 ### Summary
@@ -514,7 +610,7 @@ KOI-net supports all three. Choice depends on use case.
 
 #### Spam/Quality Control
 - **Node registration review**: Manual or automated vetting before joining network
-- **Signed bundles**: Cryptographic proof of node identity via KOI-net signed envelopes
+- **Signed envelopes**: Cryptographic proof of node identity via KOI-net envelope signatures
 - **Reputation signals**: Track query success rates, user feedback
 - **Stake/deposit**: Economic skin-in-the-game for node operators (optional)
 
@@ -666,22 +762,24 @@ Start with **Model A (BYO API Key)** for simplicity:
 
 A land trust wants to share their monitoring methodologies but protect proprietary data.
 
-1. They create a GPT loaded with their methodology docs and public reports
-2. They (or we help them) wrap it as a KOI proxy node
-3. They set permissions:
+1. They prototype an agent using ChatGPT's GPT Builder (easy UI, quick iteration)
+2. They export/replicate the config to an **OpenAI Assistants API** agent (API-accessible)
+3. They (or we help them) wrap the Assistants API agent as a KOI proxy node
+4. They set permissions:
    - "Public": General methodology questions
    - "Protected": Detailed monitoring protocols (authenticated partners only)
    - "Private": Raw monitoring data, internal assessments
-4. Other network agents can discover and query their public expertise
+5. Other network agents can discover and query their public expertise
 
 ### Scenario 2: Individual Expert
 
 A soil scientist wants to contribute their knowledge to the network.
 
-1. They create a Gem with their research papers and domain expertise
-2. They register with KOI, set to "Public" (anyone can query)
-3. When network queries touch soil carbon topics, their agent can be invoked
-4. They maintain control—can update, restrict, or remove at any time
+1. They prototype using Google's Gems UI for quick setup with their research papers
+2. They replicate the agent config to **Vertex AI Agents** (API-accessible)
+3. They register the Vertex AI agent with KOI, set to "Public" (anyone can query)
+4. When network queries touch soil carbon topics, their agent can be invoked
+5. They maintain control—can update, restrict, or remove at any time
 
 ### Scenario 3: Cross-Organizational Query
 
@@ -790,3 +888,4 @@ This is infrastructure we're building for ourselves anyway. Offering it to partn
 - **2026-01-07**: Initial capture from Gregory brainstorm + Darren/Claude synthesis
 - **2026-01-07**: Incorporated feedback: added agent node contract, GPT/Gem reality check, expanded permissions/auth, MVP roadmap, security/threat model, economics model
 - **2026-01-07**: Aligned with KOI-net/RID semantics: renamed "Capability Manifest" to Agent Profile Bundle, added explicit primitive mapping, clarified auth layering (node-to-node vs human-to-node), added MCP/A2A interop section
+- **2026-01-07**: Refinements: defined `orn:koi-net.agent` RID type format (name+pubkey-hash), clarified query routing model (RPC vs events), tightened gateway trust model (signed attestations), updated intro visibility levels, aligned scenarios with GPT/Gem reality check, fixed "signed bundles" → "signed envelopes"
