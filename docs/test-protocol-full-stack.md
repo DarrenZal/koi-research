@@ -1,6 +1,8 @@
 # Full-Stack Code Generation Test Protocol (Marie)
 
-This protocol is designed so a non-technical PM can run repeatable tests and produce feedback that’s actionable for engineering.
+> **Origin:** [Regen AI Builders Standup - 2026-01-06](https://www.notion.so/regennetwork/Regen-AI-Builders-Standup-2e025b77eda180e1b7eaf58a28035e1b)
+
+This protocol is designed so a non-technical PM can run repeatable tests and produce feedback that's actionable for engineering.
 
 ## What we’re trying to learn (per Zach’s “learning goal” framing)
 

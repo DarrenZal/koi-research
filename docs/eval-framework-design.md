@@ -1,5 +1,7 @@
 # MCP Stack Eval Framework (Regression Testing) — Design v0.1
 
+> **Origin:** Zach's input on automated evals from [Regen AI Builders Standup - 2026-01-06](https://www.notion.so/regennetwork/Regen-AI-Builders-Standup-2e025b77eda180e1b7eaf58a28035e1b)
+
 This document proposes an automated eval framework to catch regressions as:
 - LLM models change
 - agent behavior/prompts change
