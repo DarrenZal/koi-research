@@ -8,9 +8,9 @@ This devcontainer provides a complete environment for running the full-stack cod
 |------|---------|---------|
 | Go | 1.22 | regen-ledger development (NU-01) |
 | Rust + wasm32 | stable | CosmWasm contracts (SC-01) |
-| Python | 3.11 | General scripting (VC-01, CA-01) |
+| Python | 3.x | General scripting (VC-01, CA-01) |
 | Node.js | 20 LTS | MCP tools, Claude Code CLI |
-| regen-ledger | cloned | Pre-cloned for upgrade handler tests |
+| regen-ledger | cloned on create | Used for upgrade handler tests (NU-01) |
 
 ## Usage
 
@@ -19,7 +19,8 @@ This devcontainer provides a complete environment for running the full-stack cod
 1. Open koi-research folder
 2. When prompted, click "Reopen in Container"
 3. Wait for container to build (~5 min first time)
-4. Run `verify-env` to confirm all tools are available
+4. Container will auto-run `setup-repos` + `verify-env` on first create
+5. Re-run `verify-env` any time to confirm tooling
 
 ### GitHub Codespaces
 
@@ -36,7 +37,8 @@ docker build -t regen-test-env .devcontainer/
 # Run interactive
 docker run -it -v $(pwd):/workspaces/koi-research regen-test-env
 
-# Verify
+# First-time repo bootstrap + verify
+docker run regen-test-env setup-repos
 docker run regen-test-env verify-env
 ```
 
@@ -49,7 +51,7 @@ Once in the container:
 verify-env
 
 # Run test protocol helper
-./scripts/run-test-protocol.sh --suite core
+./scripts/run-test-protocol.sh --suite tier1
 
 # Or manually follow the protocol
 cat docs/test-protocol-full-stack.md

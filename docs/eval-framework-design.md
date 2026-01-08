@@ -91,6 +91,17 @@ Organize tests into suites with different “flakiness budgets” and run cadenc
 - Per-query: Recall@10 must be ≥ 0.6 (or “≥ baseline - 0.1” once baseline exists).
 - Aggregate: Mean Recall@10 must not drop more than 0.05 vs baseline.
 
+**Current v0 implementation (HTTP runner)**
+- Gold set: `koi-research/evals/suite_b_gold_set.json`
+- Runner: `koi-research/scripts/run_suite_b.py`
+- Baseline: `koi-research/reports/baselines/prod/suite_b.json`
+
+Refresh the baseline (only when the new behavior is expected):
+```bash
+cd koi-research
+python3 scripts/run_suite_b.py --env prod --write-baseline reports/baselines/prod/suite_b.json
+```
+
 ## Suite C — Performance & Health (deterministic, threshold-based)
 
 **Purpose:** Detect degradations that make the system unusable even if it’s “correct”.
@@ -130,6 +141,10 @@ Organize tests into suites with different “flakiness budgets” and run cadenc
 - Nightly: **Claude Sonnet** (lower cost + faster, good stability) with low temperature.
 - Weekly: **Claude Opus** (capability check) with the same scenario set.
 - Always record: model name/version, temperature, agent version/prompt hash, MCP server version, and corpus `indexed_at` so failures are reproducible.
+
+**Standardized environment (strongly recommended)**
+- Run Suite D in a consistent devcontainer/Docker image with required toolchains (python/go/rust) so failures represent regressions, not missing local tooling.
+- Starter option: reuse the devcontainer in `koi-research/.devcontainer/` (or mirror it into the eval runner repo once the harness is implemented).
 
 **Where scenarios come from**
 - Seed initial Suite D scenarios from the manual protocol: `koi-research/docs/test-protocol-full-stack.md:1`.
@@ -204,6 +219,8 @@ Use the manual protocol to discover “high-signal” prompts, then convert them
 - **NU-01** (upgrade handler scaffold) → Suite D (repo edit + `go test` executed)
 - **VC-01** (tiny CLI + `unittest`) → Suite D (file creation + tests executed)
 - **CA-02** (registry report template) → Suite D (required headings/checklists present)
+- **KV-01 / KV-02** (public delta tests) → Suite B (citations + expected docs in top-k) + Suite D (required sections present)
+- **KV-03** (private delta test) → Suite B (auth-gated retrieval) + Suite D (template generation), or keep manual-only if CI auth is not available
 
 Promotion checklist:
 1. Copy the exact manual prompt.
@@ -258,27 +275,84 @@ To reduce noise:
 - Extended Suite D scenarios (bigger workflows)
 - Report review + gold set maintenance
 
-## Implementation options (choose one for v0)
+## Implementation options
 
-### Option 1 (recommended): TypeScript runner + MCP stdio client
-Because `regen-koi-mcp/evals/run_eval.ts` already exists.
+### Suite A/B/C: HTTP runner (implemented)
+Test `/api/koi/query` and `/api/koi/graph` directly via curl/Python requests.
 
-Build:
-- A small MCP test client that:
-  - spawns the MCP server process (local) OR connects to a deployed MCP entrypoint if available
-  - calls `tools/list`
-  - calls tool methods and captures structured outputs
+- **Suite A** (contract): Validate query types against backend
+- **Suite B** (retrieval): Golden queries via HTTP (`scripts/run_suite_b.py`)
+- **Suite C** (health): Metrics via `get_mcp_metrics` endpoint
 
-Pros: tests the actual MCP interface; aligns with existing TS code.
-Cons: requires solid MCP client harness, careful parsing.
+Pros: simple, structured JSON, no MCP client needed.
+Implemented in: `.github/workflows/full-stack-tests.yml`
 
-### Option 2: HTTP-only runner (KOI API endpoints)
-Test `/api/koi/query` and `/api/koi/graph` directly.
+### Suite D: Claude Agent SDK (recommended)
 
-Pros: simplest; structured JSON.
-Cons: does not directly test MCP schema/tool behavior.
+The [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-code/sdk) provides programmatic access to the same agent capabilities that power Claude Code. This is the recommended approach for Suite D (agent scenarios) because:
 
-Pragmatic path: do **both** — Suite A through MCP, Suite B through HTTP.
+1. **Battle-tested tooling** — Same file editing, bash, search tools used in production
+2. **Native MCP support** — Configure KOI MCP server directly in the agent
+3. **Structural verification** — Capture tool calls, outputs, and files created
+4. **No abstraction tax** — Claude-native, no multi-provider overhead
+
+**Example test harness:**
+
+```python
+from claude_agent_sdk import Agent
+
+def run_scenario(prompt: str, expected_tools: list[str], expected_files: list[str]):
+    agent = Agent(
+        model="claude-sonnet-4-20250514",
+        tools=["bash", "read", "edit", "glob", "grep"],
+        mcp_servers=["regen-koi"],
+        setting_sources=["project"]  # Enable skills, CLAUDE.md, etc.
+    )
+
+    result = agent.run(prompt)
+
+    # Structural checks
+    tools_called = [call.tool for call in result.tool_calls]
+    files_created = [f for f in expected_files if Path(f).exists()]
+
+    return {
+        "passed": all(t in tools_called for t in expected_tools),
+        "tools_called": tools_called,
+        "files_created": files_created,
+        "output": result.output
+    }
+
+# Run VC-01 scenario
+result = run_scenario(
+    prompt="Create a Python CLI that prints 'Hello, Regen!' with a --name flag...",
+    expected_tools=["regen-koi.search", "edit"],
+    expected_files=["scratch/hello_regen.py", "scratch/test_hello_regen.py"]
+)
+```
+
+**Why Agent SDK over other frameworks:**
+
+| Consideration | Agent SDK | LangChain/CrewAI/etc |
+|---------------|-----------|----------------------|
+| MCP support | Native | Requires custom integration |
+| Tool execution | Production-proven | Framework-dependent |
+| Claude optimization | Built-in (caching, context) | Generic abstractions |
+| Maintenance | Anthropic-maintained | Community-maintained |
+
+**When to use other frameworks:** If you need multi-model support or have existing LangChain investments.
+
+**Prototype implementation (this repo)**
+- Scenarios: `koi-research/evals/suite_d_scenarios.json`
+- Runner: `koi-research/scripts/run_suite_d.py`
+- CI: runs in `koi-research/.github/workflows/full-stack-tests.yml` (Tier 1 / `all`), and feeds into hallucination detection via the generated markdown results file.
+
+Run locally (requires Claude Code CLI + API key):
+```bash
+cd koi-research
+python3 -m pip install claude-agent-sdk==0.1.19
+export ANTHROPIC_API_KEY=...   # required by Claude Code CLI
+python3 scripts/run_suite_d.py --env prod --model sonnet --out-md /tmp/suite_d.md --out-json /tmp/suite_d.json
+```
 
 ---
 
@@ -356,23 +430,104 @@ Recommended workflow integration:
 
 ---
 
-# Implementation plan (1–2 weeks)
+# Implementation plan
 
-## Week 1 — Build the reliable core
-1. Choose runner approach (TS MCP client + optional HTTP).
-2. Implement Suite A (tool discovery + schema/contract tests).
-3. Port/update existing gold set into Suite B format (keep small at first).
-4. Add reporting output (JSON + Markdown) and baseline compare.
+## Phase 1 — HTTP-based suites (done)
+- [x] Suite A: Contract tests via HTTP (`curl` in CI workflow)
+- [x] Suite B: Retrieval gold set via HTTP (`scripts/run_suite_b.py`)
+- [x] Suite C: Health/preflight via HTTP (CI workflow)
+- [x] Hallucination detection (`scripts/verify-citations.py`)
+- [x] CI workflow with artifacts and summary
 
-## Week 2 — Expand coverage + automate alerts
-1. Add Suite C health/perf checks using `get_mcp_metrics` and `get_stats`.
-2. Add simple alerting (GitHub issue/comment).
-3. Add first 2–3 Suite D agent scenarios (non-blocking).
-4. Document “gold set maintenance” playbook (how to update expected results safely).
+## Phase 2 — Agent SDK for Suite D (next)
+1. Install Claude Agent SDK in test environment
+2. Create `scripts/run_suite_d.py` harness using Agent SDK
+3. Port 2-3 scenarios from `test-protocol-full-stack.md`:
+   - VC-01 (Python CLI + tests)
+   - CA-01 (basket token helper)
+   - NU-02 (upgrade planning)
+4. Add structural checks: tools called, files created, sections present
+5. Integrate with CI (nightly, non-blocking initially)
+
+## Phase 3 — Alerts + baseline tracking
+1. Baseline comparison for hallucination rate trends
+2. GitHub issue creation on red regressions
+3. Weekly summary comment to tracking issue
 
 ---
 
-# Ownership (make it someone’s job)
+# Implemented: Hallucination Detection
+
+> **Status:** Implemented and integrated into CI workflow.
+
+Hallucination detection validates that agent-generated citations (file paths, line numbers, symbols, GitHub URLs) actually exist in the codebase. This is especially valuable for **Delta tests (KV-01/02/03)** where we compare KOI-grounded vs baseline responses.
+
+## Scripts
+
+- `scripts/verify-citations.py` — Main verification script
+  - Extracts citations from markdown test results
+  - Verifies file paths exist in configured repos
+  - Verifies line numbers are in range
+  - Verifies symbols via grep or KOI API
+  - Reports hallucination rate (failed / verifiable)
+
+- `scripts/verify-delta-citations.sh` — Wrapper for Delta tests
+  - Runs verification with environment-aware repo paths
+  - Configurable threshold via `HALLUCINATION_THRESHOLD` env var
+  - Optional KOI API symbol verification via `USE_KOI_API=true`
+
+## CI Integration
+
+The GitHub Actions workflow (`.github/workflows/full-stack-tests.yml`) includes:
+- `hallucination_threshold` input parameter (default: 0.20 = 20%)
+- Automatic citation verification after test results are generated
+- Results included in job summary with pass/warn status
+- Artifacts include `citation_verification.json`
+
+## Baseline + Regression
+
+Once CI is running real agent scenarios (Suite D), track hallucination regressions by diffing the current run vs a committed baseline:
+- Baseline file: `reports/baselines/prod/hallucination.json`
+- Diff runner: `scripts/compare_hallucination_baseline.py`
+
+Refresh the baseline (only when the new behavior is expected):
+```bash
+cd koi-research
+python3 scripts/verify-citations.py docs/test-results/<your-latest-run>.md --format json > /tmp/citation_verification.json
+python3 scripts/compare_hallucination_baseline.py \
+  --current /tmp/citation_verification.json \
+  --baseline reports/baselines/prod/hallucination.json \
+  --write-baseline
+```
+
+## Usage
+
+```bash
+# Verify a test results file
+python scripts/verify-citations.py docs/test-results/2026-01-08-delta.md \
+  --repos /path/to/regen-ledger,/path/to/koi-research \
+  --scratch scratch \
+  --fail-threshold 0.20
+
+# Use KOI API for symbol verification
+python scripts/verify-citations.py results.md --use-koi-api
+
+# Output JSON for CI
+python scripts/verify-citations.py results.md --format json
+```
+
+## Interpretation Notes
+
+False positives can occur when:
+- Agent proposes new code (citations to files that will be created)
+- Agent creates files in scratch/ (add `--scratch` path)
+- Agent references example code blocks (not real files)
+
+The 20% threshold accommodates some false positives while catching significant hallucination issues.
+
+---
+
+# Ownership (make it someone's job)
 
 Suggested initial ownership (edit as needed):
 - **Eval framework DRI (engineering):** Darren (build/maintain harness, CI wiring, thresholds, incident triage)

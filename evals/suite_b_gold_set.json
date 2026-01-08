@@ -1,0 +1,128 @@
+{
+  "suite": "suite_b",
+  "k_default": 10,
+  "tests": [
+    {
+      "id": "search_registry_agent_001",
+      "tool": "query",
+      "critical": true,
+      "input": { "query": "Registry Agent", "limit": 10 },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "handbook.regen.network/regen-registry-overview/users",
+              "github.com/regen-network/regen-registry-handbook/blob/main/regen-registry-overview/users.md"
+            ]
+          }
+        ]
+      },
+      "notes": "Public Registry Agent sources should be discoverable."
+    },
+    {
+      "id": "search_ecocredit_messages_001",
+      "tool": "query",
+      "critical": true,
+      "input": { "query": "ecocredit spec 03_messages.md MsgCreateBatch", "limit": 10 },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "docs.regen.network/modules/ecocredit/03_messages",
+              "github.com/regen-network/regen-ledger/blob/main/x/ecocredit/spec/03_messages.md"
+            ]
+          }
+        ]
+      },
+      "notes": "Should surface canonical ecocredit messages documentation."
+    },
+    {
+      "id": "search_basket_rfc_001",
+      "tool": "query",
+      "critical": false,
+      "input": { "query": "basket token basket functionality RFC 002", "limit": 10 },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "github.com/regen-network/regen-ledger/blob/main/specs/rfcs/002-basket-functionality/README.md"
+            ]
+          }
+        ]
+      },
+      "notes": "Basket functionality RFC should be retrievable."
+    },
+    {
+      "id": "search_validators_upgrades_001",
+      "tool": "query",
+      "critical": true,
+      "input": { "query": "docs/validators/upgrades README", "limit": 10 },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "github.com/regen-network/regen-ledger/blob/main/docs/validators/upgrades/README.md"
+            ]
+          }
+        ]
+      },
+      "notes": "Validator upgrade docs are a core operational workflow."
+    },
+    {
+      "id": "search_msg_create_batch_001",
+      "tool": "query",
+      "critical": false,
+      "input": { "query": "MsgCreateBatch tx.proto", "limit": 10 },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "github.com/regen-network/regen-ledger/blob/main/proto/regen/ecocredit/v1alpha1/tx.proto",
+              "github.com/regen-network/regen-ledger/blob/main/x/ecocredit/base/types/v1/tx.pb.go"
+            ]
+          }
+        ]
+      },
+      "notes": "Message grounding: should quickly find the canonical proto or generated types."
+    },
+    {
+      "id": "graph_search_entities_msg_create_batch_001",
+      "tool": "graph",
+      "critical": true,
+      "input": { "query_type": "search_entities", "entity_name": "MsgCreateBatch", "limit": 10 },
+      "assert": {
+        "min_results": 1,
+        "required_matches": [
+          { "type": "entity_name_equals", "values": ["MsgCreateBatch"] },
+          { "type": "file_path_contains", "values": ["x/ecocredit", "proto/regen/ecocredit"] }
+        ]
+      },
+      "notes": "Code graph should find the MsgCreateBatch symbol in ecocredit."
+    },
+    {
+      "id": "graph_search_entities_basket_001",
+      "tool": "graph",
+      "critical": false,
+      "input": { "query_type": "search_entities", "entity_name": "Basket", "limit": 10 },
+      "assert": {
+        "min_results": 1,
+        "required_matches": [
+          { "type": "entity_name_contains", "values": ["Basket"] },
+          { "type": "file_path_contains", "values": ["x/ecocredit/basket"] }
+        ]
+      },
+      "notes": "Code graph should surface basket module code paths."
+    }
+  ]
+}
+

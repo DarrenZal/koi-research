@@ -13,7 +13,7 @@
   "workspaceFolder": "/workspaces/koi-research",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/koi-research,type=bind,consistency=cached",
 
-  "postCreateCommand": "verify-env",
+  "postCreateCommand": "setup-repos && mkdir -p scratch && verify-env",
 
   "postStartCommand": "echo 'Ready for full-stack testing. Run: cat docs/test-protocol-full-stack.md'",
 
@@ -39,10 +39,6 @@
       ]
     }
   },
-
-  "mounts": [
-    "source=${localWorkspaceFolder}/../regen-ledger,target=/workspaces/regen-ledger,type=bind,consistency=cached"
-  ],
 
   "remoteEnv": {
     "REGEN_LEDGER_PATH": "/workspaces/regen-ledger",

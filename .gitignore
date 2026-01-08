@@ -6,12 +6,20 @@ node_modules/
 # Testing
 coverage/
 
+# Local scratch (manual protocol artifacts)
+scratch/
+
+# Eval run outputs (baselines are versioned separately)
+reports/evals/
+
 # Production
 build/
 dist/
 
 # Misc
 .DS_Store
+__pycache__/
+*.pyc
 .env
 .env.local
 .env.development.local

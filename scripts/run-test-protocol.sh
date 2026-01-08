@@ -6,22 +6,21 @@
 #   ./scripts/run-test-protocol.sh [OPTIONS]
 #
 # Options:
-#   --suite SUITE    Test suite to run: preflight, core, stretch, all (default: core)
+#   --suite SUITE    Test suite to run: preflight, tier1, tier2, delta, all (default: tier1)
 #   --output DIR     Output directory for results (default: docs/test-results)
 #   --model MODEL    Model to use: sonnet, opus (default: sonnet)
 #   --help           Show this help message
 #
 # Prerequisites:
-#   - Claude Code CLI installed and authenticated
-#   - KOI MCP configured
-#   - Go 1.22+ (for NU-01)
-#   - Rust + wasm32 target (for SC-01)
-#   - Python 3.11+ (for VC-01, CA-01)
+#   - KOI MCP configured in your agent environment (Claude Code / Codex / etc)
+#   - Python 3.x (Tier 1 + Delta)
+#   - Go 1.22+ (Tier 2 / NU-01)
+#   - Rust + wasm32 target (Tier 2 / SC-01)
 
 set -e
 
 # Defaults
-SUITE="core"
+SUITE="tier1"
 OUTPUT_DIR="docs/test-results"
 MODEL="sonnet"
 TIMESTAMP=$(date +%Y-%m-%d-%H%M)
@@ -68,31 +67,53 @@ echo ""
 
 # Environment check
 echo "=== Environment Check ==="
-check_tool() {
+version_line() {
     local name=$1
     local cmd=$2
-    local required=$3
+    local version_cmd=$3
 
-    if command -v $cmd &> /dev/null; then
-        echo "  [OK] $name: $($cmd --version 2>&1 | head -1)"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        echo "  [OK] $name: $($version_cmd 2>&1 | head -1)"
         return 0
-    else
-        if [ "$required" == "required" ]; then
-            echo "  [FAIL] $name: NOT INSTALLED (required)"
-            return 1
-        else
-            echo "  [WARN] $name: not installed (optional for some tests)"
-            return 0
-        fi
     fi
+
+    echo "  [MISSING] $name"
+    return 1
 }
 
 ENV_OK=true
-check_tool "Python" "python3" "required" || ENV_OK=false
-check_tool "Go" "go" "optional"
-check_tool "Rust" "rustc" "optional"
-check_tool "Cargo" "cargo" "optional"
-check_tool "Node.js" "node" "optional"
+version_line "Git" "git" "git --version" || ENV_OK=false
+version_line "Python" "python3" "python3 --version" || ENV_OK=false
+
+if [ "$SUITE" == "tier2" ] || [ "$SUITE" == "all" ]; then
+    version_line "Go" "go" "go version" || ENV_OK=false
+    version_line "Rust" "rustc" "rustc --version" || ENV_OK=false
+    version_line "Cargo" "cargo" "cargo --version" || ENV_OK=false
+else
+    if command -v go >/dev/null 2>&1; then
+        echo "  [OK] Go (Tier 2 only): $(go version 2>&1 | head -1)"
+    else
+        echo "  [WARN] Go: missing (Tier 2 only)"
+    fi
+
+    if command -v rustc >/dev/null 2>&1; then
+        echo "  [OK] Rust (Tier 2 only): $(rustc --version 2>&1 | head -1)"
+    else
+        echo "  [WARN] Rust: missing (Tier 2 only)"
+    fi
+
+    if command -v cargo >/dev/null 2>&1; then
+        echo "  [OK] Cargo (Tier 2 only): $(cargo --version 2>&1 | head -1)"
+    else
+        echo "  [WARN] Cargo: missing (Tier 2 only)"
+    fi
+fi
+
+if command -v node >/dev/null 2>&1; then
+    echo "  [OK] Node.js (optional): $(node --version 2>&1 | head -1)"
+else
+    echo "  [WARN] Node.js: missing (optional)"
+fi
 
 if [ "$ENV_OK" == "false" ]; then
     echo ""
@@ -103,6 +124,7 @@ fi
 echo ""
 
 # Initialize results file
+mkdir -p scratch
 cat > "$RESULTS_FILE" << EOF
 # Test Results - $TIMESTAMP
 
@@ -117,69 +139,121 @@ cat > "$RESULTS_FILE" << EOF
 
 | Tool | Version | Status |
 |------|---------|--------|
-| Python | $(python3 --version 2>&1 | cut -d' ' -f2) | OK |
-| Go | $(go version 2>&1 | cut -d' ' -f3 || echo "N/A") | $(command -v go &>/dev/null && echo "OK" || echo "Missing") |
-| Rust | $(rustc --version 2>&1 | cut -d' ' -f2 || echo "N/A") | $(command -v rustc &>/dev/null && echo "OK" || echo "Missing") |
-| Node | $(node --version 2>&1 || echo "N/A") | $(command -v node &>/dev/null && echo "OK" || echo "Missing") |
+| Git | $(git --version 2>&1 | head -1) | OK |
+| Python | $(python3 --version 2>&1 | head -1) | OK |
+| Go | $(go version 2>&1 | head -1 || echo "N/A") | $(command -v go &>/dev/null && echo "OK" || echo "Missing") |
+| Rust | $(rustc --version 2>&1 | head -1 || echo "N/A") | $(command -v rustc &>/dev/null && echo "OK" || echo "Missing") |
+| Cargo | $(cargo --version 2>&1 | head -1 || echo "N/A") | $(command -v cargo &>/dev/null && echo "OK" || echo "Missing") |
+| Node | $(node --version 2>&1 | head -1 || echo "N/A") | $(command -v node &>/dev/null && echo "OK" || echo "Missing") |
 
 ---
 
 EOF
 
-# Test definitions
-run_test() {
+append_result_block() {
     local test_id=$1
     local test_name=$2
-    local prompt_file=$3
-
-    echo "=== Running $test_id: $test_name ==="
-
-    # For now, just log that we would run the test
-    # Actual implementation would invoke Claude Code CLI
+    local tier=$3
 
     cat >> "$RESULTS_FILE" << EOF
-## $test_id: $test_name
+## Test Result: ${test_id} - ${test_name}
 
-**Status:** Pending manual execution
-**Prompt:** See docs/test-protocol-full-stack.md
+- Date:
+- Runner:
+- Environment (Claude Code / other):
+- Tier (${tier}):
+- Authenticated to KOI private docs? (Y/N):
+- Start time:
+- End time:
+- Outcome (Worked=2 / Partial=1 / Failed=0):
+- Blockers (None / Tooling / Auth / Repo missing / Tool failure / Other):
+- Verification status (Verified / Not verified (env blocked) / Not verified (agent gap)):
+- For Delta tests only: KOI value-add vs baseline (Y/N) + 1 sentence why:
+- Quality:
+  - Used indexed knowledge (Y/N):
+  - Tool reliability (Y/N):
+  - Safe behavior (Y/N):
+  - Good handoff (Y/N):
+
+### Prompt Used
+<paste exact prompt here from docs/test-protocol-full-stack.md>
+
+### What the agent did (high level)
+
+### What worked
+
+### What didn’t / issues
+
+### Tool errors (paste raw)
+
+### Verification evidence
+<tests run, outputs, links, screenshots if any>
+
+---
+
+EOF
+}
+
+# Preflight section (always included)
+cat >> "$RESULTS_FILE" << EOF
+## Preflight
+
+Run the preflight prompt from:
+- docs/test-protocol-full-stack.md
+
+Paste outputs + any errors here.
 
 ---
 
 EOF
 
-    echo "  -> Logged to results file (manual execution required)"
-    echo ""
-}
-
-# Run tests based on suite
-if [ "$SUITE" == "preflight" ] || [ "$SUITE" == "core" ] || [ "$SUITE" == "all" ]; then
-    echo "=== Preflight Check ==="
-    echo "Run the preflight prompt from docs/test-protocol-full-stack.md"
-    echo ""
-fi
-
-if [ "$SUITE" == "core" ] || [ "$SUITE" == "all" ]; then
-    run_test "VC-01" "Small feature + unit tests" "prompts/vc-01.txt"
-    run_test "VC-02" "Fix a real integration mismatch" "prompts/vc-02.txt"
-    run_test "NU-01" "Add upgrade handler scaffold" "prompts/nu-01.txt"
-    run_test "SC-01" "Generate minimal CosmWasm contract" "prompts/sc-01.txt"
-    run_test "CA-01" "Basket token helper mini-app" "prompts/ca-01.txt"
-fi
-
-if [ "$SUITE" == "stretch" ] || [ "$SUITE" == "all" ]; then
-    run_test "NU-02" "Upgrade planning from docs" "prompts/nu-02.txt"
-    run_test "SC-02" "Deploy to local chain" "prompts/sc-02.txt"
-    run_test "CA-02" "Registry Agent report template" "prompts/ca-02.txt"
-fi
+# Add test blocks based on suite
+case "$SUITE" in
+    preflight)
+        ;;
+    tier1)
+        append_result_block "VC-01" "Small feature + unit tests" "Tier 1"
+        append_result_block "VC-02" "query_code_graph contract sanity" "Tier 1"
+        append_result_block "NU-02" "Upgrade planning from real upgrade docs (no code)" "Tier 1"
+        append_result_block "CA-01" "Basket token helper mini-app (docs + code-grounded)" "Tier 1"
+        append_result_block "CA-02" "Registry Agent report template generator" "Tier 1"
+        ;;
+    tier2)
+        append_result_block "NU-01" "Add a next upgrade handler scaffold" "Tier 2"
+        append_result_block "SC-01" "Minimal CosmWasm greeter contract + tests" "Tier 2"
+        append_result_block "SC-02" "Deploy to a local chain (optional)" "Tier 2"
+        ;;
+    delta)
+        append_result_block "KV-01" "Basket tokens — baseline vs KOI-grounded" "Delta"
+        append_result_block "KV-02" "Regen Ledger upgrades — baseline vs KOI-grounded" "Delta"
+        append_result_block "KV-03" "Registry Agent — baseline vs KOI-grounded (auth recommended)" "Delta"
+        ;;
+    all)
+        append_result_block "VC-01" "Small feature + unit tests" "Tier 1"
+        append_result_block "VC-02" "query_code_graph contract sanity" "Tier 1"
+        append_result_block "NU-02" "Upgrade planning from real upgrade docs (no code)" "Tier 1"
+        append_result_block "CA-01" "Basket token helper mini-app (docs + code-grounded)" "Tier 1"
+        append_result_block "CA-02" "Registry Agent report template generator" "Tier 1"
+        append_result_block "NU-01" "Add a next upgrade handler scaffold" "Tier 2"
+        append_result_block "SC-01" "Minimal CosmWasm greeter contract + tests" "Tier 2"
+        append_result_block "SC-02" "Deploy to a local chain (optional)" "Tier 2"
+        append_result_block "KV-01" "Basket tokens — baseline vs KOI-grounded" "Delta"
+        append_result_block "KV-02" "Regen Ledger upgrades — baseline vs KOI-grounded" "Delta"
+        append_result_block "KV-03" "Registry Agent — baseline vs KOI-grounded (auth recommended)" "Delta"
+        ;;
+    *)
+        echo "ERROR: Unknown suite: $SUITE"
+        echo "Valid suites: preflight, tier1, tier2, delta, all"
+        exit 1
+        ;;
+esac
 
 # Summary
 cat >> "$RESULTS_FILE" << EOF
 
 ## Summary
 
-| Test | Score | Notes |
-|------|-------|-------|
-| Total | -/10 | Pending execution |
+Fill in scores directly in each Test Result block above.
 
 ---
 

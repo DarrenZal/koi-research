@@ -4,12 +4,21 @@
 
 This protocol is designed so a non-technical PM can run repeatable tests and produce feedback that's actionable for engineering.
 
-## What we’re trying to learn (per Zach’s “learning goal” framing)
+## What we're trying to learn (per Zach's "learning goal" framing)
 
 1. Can the system go from natural language → working code changes (not just advice)?
-2. Can it safely navigate Regen’s real codebases (regen-ledger + MCP stack) using the indexed code/knowledge?
-3. Can it handle “full-stack” workflows that involve planning + implementation + verification (tests/builds) + clear handoff?
+2. Can it safely navigate Regen's real codebases (regen-ledger + MCP stack) using the indexed code/knowledge?
+3. Can it handle "full-stack" workflows that involve planning + implementation + verification (tests/builds) + clear handoff?
 4. Where are the current capability boundaries (what reliably breaks)?
+
+## Manual vs Automated
+
+This document describes the **manual test protocol** for human testers (Marie).
+
+For **automated regression testing**, see `docs/eval-framework-design.md`:
+- Suite A/B/C run via HTTP in CI (implemented)
+- Suite D scenarios will be automated using the [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), which provides programmatic access to the same agent capabilities
+- Hallucination detection runs automatically on test results (`scripts/verify-citations.py`)
 
 ## 0) Setup (15–30 min, once)
 
@@ -25,6 +34,31 @@ This protocol is designed so a non-technical PM can run repeatable tests and pro
 - Create a new branch per test (e.g., `marie/test-VC-01`).
 - Keep a timer (phone is fine).
 
+### Tooling prerequisites (Tier 1 vs Tier 2)
+
+This protocol intentionally tests two different things:
+- **Tier 1 (Portable):** generation + KOI grounding on any machine (Python + MCP access). Recommended for Marie.
+- **Tier 2 (Dev environment):** domain-specific coding with verification (Go/Rust toolchains, local repos, tests).
+
+If a Tier 2 test is blocked by missing tooling, that’s still valuable data — mark it as “Blocked: Tooling” (see scoring).
+
+If you want a consistent Tier 2 environment without installing local toolchains, use the devcontainer described in `.devcontainer/README.md` (VS Code “Reopen in Container” or Codespaces).
+
+### Tooling check prompt (copy/paste)
+Run this once before starting Tier 2 tests:
+```text
+Tooling check:
+1) Run: python3 --version (and python --version if python3 is missing)
+2) Run: git --version
+3) Run (Tier 2 only): go version
+4) Run (Tier 2 only): cargo --version
+
+For each command: paste the exact output (or error). If go/cargo are missing, say “missing”.
+```
+
+### Tool naming note (important)
+Depending on the client, tool names may show up with prefixes (e.g., `mcp__regen-koi__search` or `mcp__plugin_koi_regen-koi__search`). That’s OK — in this doc we refer to logical names like `search` / `query_code_graph`.
+
 ### Where to submit results (after you run tests)
 Pick the simplest option available to you:
 - **Option A (preferred):** Paste each completed “Test Result” block into a single Notion page titled `Full-Stack Codegen Test Results — <YYYY-MM-DD>` and share the link in the Gaia AI team channel, tagging Darren.
@@ -35,6 +69,7 @@ Use this once at the beginning of a testing session to confirm the stack is work
 
 ```text
 Preflight check:
+0) If you can’t find these tools by name, list the available tools first, then run the closest equivalent.
 1) Call search for "Registry Agent" (limit 3) and paste the results.
 2) Call query_code_graph list_repos and paste the results.
 3) If available: Call get_mcp_metrics and paste the results.
@@ -70,6 +105,20 @@ Use exactly one of these, once per test:
 - **Partially worked (1 point):** Meaningful progress, but missing a required element (e.g., no verification, incomplete wiring, wrong repo touched, unclear instructions).
 - **Failed (0 points):** Didn’t produce a usable result, hallucinated, or got stuck without a viable next step.
 
+### Blockers (record separately from score)
+If something external prevented success, mark it here so engineering can triage correctly:
+- **None**
+- **Tooling:** missing Go/Rust/node/etc needed to run verification
+- **Auth:** couldn’t access private docs that the prompt depended on
+- **Repo missing:** required repo not present locally
+- **Tool failure:** MCP/tool call failed repeatedly or returned hard errors
+- **Other:** describe
+
+### Verification status (helps distinguish “code wrong” vs “env blocked”)
+- **Verified:** tests/builds were run and outputs recorded
+- **Not verified (env blocked):** tooling missing or environment prevented running verification, but the agent provided exact commands for an engineer to run
+- **Not verified (agent gap):** verification was possible but the agent didn’t run it / didn’t provide commands
+
 ### Quality checkboxes (for notes; not a numeric score)
 Mark **Y/N** for each:
 - **Used indexed knowledge:** referenced specific files/symbols/docs it discovered (not generic advice).
@@ -79,22 +128,22 @@ Mark **Y/N** for each:
 
 ## Test suite overview
 
-Run the “Core” tests first. If time remains, run “Stretch” tests.
+Run Tier 1 first. Tier 2 and the Delta tests are optional.
 
 - **Total time estimate**
-  - Core only: ~2h40 of test time (plan ~3 hours including setup + breaks)
-  - Core + Stretch: add ~2–3 hours (SC-02 adds another 60–90 min if you have a local chain)
+  - Tier 1 (recommended): ~2h of test time (plan ~2h30 including setup + breaks)
+  - Tier 2 add-ons: +~1h15 (requires Go/Rust toolchains)
+  - Delta (A/B KOI value-add): +~45 min
 
-- **Vibe coding:** VC-01 to VC-02
-- **Network upgrade:** NU-01 to NU-02
-- **Smart contract:** SC-01 (optional SC-02)
-- **Custom app (indexed code knowledge):** CA-01 to CA-02
+- **Tier 1 (Portable):** VC-01, VC-02, NU-02, CA-01, CA-02
+- **Tier 2 (Dev environment):** NU-01, SC-01 (optional SC-02)
+- **Delta (KOI value-add A/B):** KV-01, KV-02, KV-03
 
 ---
 
 # Vibe Coding
 
-## VC-01 (Core): “Small feature + unit tests” in a new folder
+## VC-01 (Tier 1): “Small feature + unit tests” in a new folder
 
 **Goal:** Natural language → working code + tests with minimal dependencies.
 
@@ -132,39 +181,69 @@ Deliverable: code + tests + terminal output from running tests.
 
 ---
 
-## VC-02 (Core): “Fix a real integration mismatch” (MCP tool contract)
+## VC-02 (Tier 1): `query_code_graph` contract sanity (schema drift regression check)
 
-**Goal:** See if the agent can notice a real mismatch and propose a concrete fix + verification plan.
+**Goal:** Catch regressions where the MCP tool schema drifts from the backend `/graph` API (either advertising unsupported query types or hiding supported ones).
 
 **Timebox:** 20 minutes
 
 **Prompt (copy/paste):**
 ```text
-I’m seeing errors where query_code_graph accepts some query types but the backend rejects them (e.g., list_keepers / list_messages / docs_mentioning).
+This is a contract sanity check for query_code_graph.
 
 Task:
-1) Use get_mcp_metrics and query_code_graph to reproduce at least one failing query_type and capture the exact error.
-2) Explain, in plain language, what is mismatched (client schema vs backend support).
-3) Propose a concrete fix in the MCP server implementation (what file(s) to change, what to change).
-4) Provide a minimal regression test idea that would catch this in CI.
-
-Do NOT make the code change yet—this is an analysis + fix plan only.
+1) Call query_code_graph list_repos (should succeed) and paste the result.
+2) Call query_code_graph find_call_graph with entity_name="CreateBatch" (it may return 0 results, but should not error). Paste the result or error.
+3) Try calling query_code_graph with query_type="list_keepers" (expected: tool rejects it as an invalid query_type). Paste the error.
+4) Explain what this tells you about schema drift and how to prevent it (suggest an automated contract test).
 ```
 
 **Success looks like**
-- Reproduces error and quotes it
-- Diagnoses mismatch clearly
-- Suggests specific code-level fix and a test to prevent regression
+- list_repos works
+- find_call_graph is an accepted query_type (even if results are empty)
+- list_keepers is NOT accepted (tool blocks unsupported query types)
+- Provides a concrete automated contract test idea
 
 **Common failure modes to note**
-- Hand-wavy explanation (“something is wrong”) without specifics
-- Recommends changing the backend without acknowledging MCP schema validation
+- Tool accepts unsupported query types (drift)
+- Tool rejects supported query types (drift)
+- Hand-wavy explanation without a prevention strategy
 
 ---
 
 # Network Upgrade (regen-ledger style work)
 
-## NU-01 (Core): Add a “next upgrade handler” scaffold (local, minimal)
+## NU-02 (Tier 1): Upgrade planning from real upgrade docs (no code)
+
+**Goal:** Can it turn retrieved upgrade docs into a reliable runbook (useful for humans)?
+
+**Timebox:** 20 minutes
+
+**Prompt (copy/paste):**
+```text
+Using KOI search only, find the most relevant regen-ledger documentation about validator/software upgrades and upgrade handlers.
+
+Then produce a one-page runbook for a hypothetical “Regen Ledger vX.Y” upgrade that includes:
+- prerequisites
+- upgrade height coordination checklist
+- binary build steps
+- what to verify before/after
+- rollback plan
+
+Keep it specific to Regen Ledger conventions (cite the docs you found by file path or URL).
+```
+
+**Success looks like**
+- Finds real regen-ledger upgrade docs via `search`
+- Produces a concrete checklist/runbook grounded in those docs
+
+**Common failure modes to note**
+- Generic upgrade guidance with no Regen Ledger specifics
+- No citations (can’t trace where claims came from)
+
+---
+
+## NU-01 (Tier 2): Add a “next upgrade handler” scaffold (local, minimal)
 
 **Goal:** Test whether it can follow established patterns in regen-ledger and wire a small change end-to-end.
 
@@ -204,35 +283,9 @@ Constraints:
 
 ---
 
-## NU-02 (Stretch): Upgrade planning from real upgrade docs (no code)
-
-**Goal:** Can it turn retrieved upgrade docs into a reliable runbook (useful for humans)?
-
-**Timebox:** 20 minutes
-
-**Prompt (copy/paste):**
-```text
-Using KOI search only, find the most relevant regen-ledger documentation about validator/software upgrades and upgrade handlers.
-
-Then produce a one-page runbook for a hypothetical “Regen Ledger vX.Y” upgrade that includes:
-- prerequisites
-- upgrade height coordination checklist
-- binary build steps
-- what to verify before/after
-- rollback plan
-
-Keep it specific to Regen Ledger conventions (cite the docs you found by file path or URL).
-```
-
-**Success looks like**
-- Finds real regen-ledger upgrade docs via `search`
-- Produces a concrete checklist/runbook grounded in those docs
-
----
-
 # Smart Contract
 
-## SC-01 (Core): Generate a minimal CosmWasm contract + tests
+## SC-01 (Tier 2): Generate a minimal CosmWasm contract + tests
 
 **Goal:** Can it scaffold a contract and provide runnable tests (even if deployment is skipped)?
 
@@ -264,7 +317,7 @@ Deliverable: contract code + tests + the test command(s) to run.
 
 ---
 
-## SC-02 (Stretch): Deploy to a local chain (optional, only if you already have a chain env)
+## SC-02 (Tier 2 / Stretch): Deploy to a local chain (optional, only if you already have a chain env)
 
 **Goal:** End-to-end deployment workflow (compile → store → instantiate → execute → query).
 
@@ -287,7 +340,7 @@ If the environment is NOT available, stop early and tell me exactly what is miss
 
 # Custom App (using indexed code knowledge)
 
-## CA-01 (Core): “Basket token helper” mini-app (docs + code-grounded)
+## CA-01 (Tier 1): “Basket token helper” mini-app (docs + code-grounded)
 
 **Goal:** Build something small but domain-specific using retrieved docs + code references.
 
@@ -315,7 +368,7 @@ Deliverable: the script (even if it just prints the summary) + a README grounded
 
 ---
 
-## CA-02 (Stretch): Registry Agent “report template generator”
+## CA-02 (Tier 1): Registry Agent “report template generator”
 
 **Goal:** Can it produce structured, auditable outputs for a core internal workflow?
 
@@ -342,6 +395,133 @@ The template must be grounded in what you retrieved (cite URLs or doc titles you
 
 ---
 
+# KOI Value-Add (Delta) Tests (Optional)
+
+These tests are designed to measure KOI’s incremental value over a baseline coding agent by running a quick A/B:
+- **A (Baseline):** no KOI/MCP tools
+- **B (KOI-grounded):** use KOI tools and include citations + code pointers
+
+Run A and B in separate fresh threads so the answers don’t contaminate each other.
+
+## KV-01 (Delta, public): Basket tokens — baseline vs KOI-grounded
+
+**Goal:** Does KOI materially improve correctness + traceability (citations, real symbols) for a domain-specific technical explanation?
+
+**Timebox:** 15 minutes total (A: 5, B: 10)
+
+**A) Baseline prompt (copy/paste):**
+```text
+Timebox: 5 minutes.
+
+Do NOT use any KOI/MCP tools.
+
+Explain what “basket tokens” are in Regen ecocredits and outline a user flow for creating one. If you don’t know exact on-chain message names, say so.
+
+At the end, list which parts of your answer are guesses or uncertain.
+```
+
+**B) KOI-grounded prompt (copy/paste):**
+```text
+Timebox: 10 minutes.
+
+Use KOI tools to ground the answer. Do not rely on guesswork.
+
+1) Use search with query="basketing tokens C06 basket token" limit=5.
+2) Cite at least 3 sources from the results (RID or URL).
+3) Use query_code_graph search_entities for: MsgCreate, MsgPut, MsgTake, Basket, Keeper.
+   - If there are multiple matches, choose the ones whose file_path includes x/ecocredit/basket.
+4) Rewrite the explanation + user flow, now including:
+   - a Sources section (3+ citations)
+   - a Code pointers section (symbol → file path)
+5) Include a “Tools used” section listing which tool calls you ran.
+```
+
+**Success looks like**
+- KOI version includes real citations and real code pointers (no invented symbols).
+- Baseline version is noticeably less precise or explicitly uncertain (that’s expected).
+
+---
+
+## KV-02 (Delta, public): Regen Ledger upgrades — baseline vs KOI-grounded
+
+**Goal:** Does KOI produce a Regen-specific runbook (not generic Cosmos advice) and point to the right docs/code?
+
+**Timebox:** 15 minutes total (A: 5, B: 10)
+
+**A) Baseline prompt (copy/paste):**
+```text
+Timebox: 5 minutes.
+
+Do NOT use any KOI/MCP tools.
+
+Write a one-page runbook for a hypothetical “Regen Ledger vX.Y” software upgrade:
+- prerequisites
+- upgrade height coordination checklist
+- binary build steps
+- what to verify before/after
+- rollback plan
+
+If you can’t make it Regen-specific (because you don’t have the docs), say so.
+```
+
+**B) KOI-grounded prompt (copy/paste):**
+```text
+Timebox: 10 minutes.
+
+Use KOI tools to ground the runbook.
+
+1) Use search to find Regen Ledger upgrade documentation (limit 5).
+2) Cite at least 2 Regen-ledger sources (RID or URL).
+3) Optional but preferred: use query_code_graph search_entities for UpgradeHandler / upgrade / SetUpgradeHandler and include any relevant file paths you find.
+4) Write the runbook grounded in the sources, and include a Sources section.
+5) Include a “Tools used” section listing which tool calls you ran.
+```
+
+**Success looks like**
+- KOI version has concrete Regen-ledger citations and fewer assumptions.
+- If code pointers can’t be found, it says so and still provides a useful cited runbook.
+
+---
+
+## KV-03 (Delta, private): Registry Agent — baseline vs KOI-grounded (auth recommended)
+
+**Goal:** Demonstrate KOI’s “org memory” value (internal docs) for technical workflows.
+
+**Timebox:** 15 minutes total (A: 5, B: 10)
+
+**A) Baseline prompt (copy/paste):**
+```text
+Timebox: 5 minutes.
+
+Do NOT use any KOI/MCP tools.
+
+Describe what the “Registry Agent” does at Regen and produce a “Registry Review Report” markdown template with:
+- required sections
+- checklists
+- evidence fields
+- scoring section
+
+If you’re unsure, say what you’re unsure about.
+```
+
+**B) KOI-grounded prompt (copy/paste):**
+```text
+Timebox: 10 minutes.
+
+Use KOI search to ground the answer. If you are not authenticated for private Notion, say so up front and continue using public sources.
+
+1) search query="Registry Agent" limit=5
+2) Cite at least 3 sources (RID/URL/doc title).
+3) Rewrite the description + report template grounded in those sources.
+4) Include a “Tools used” section listing which tool calls you ran.
+```
+
+**Success looks like**
+- KOI version cites internal or authoritative sources and produces a template aligned to those docs.
+- If not authenticated, it records “Blocked: Auth” but still uses public sources.
+
+---
+
 # Results template (copy/paste per test)
 
 ```md
@@ -350,10 +530,14 @@ The template must be grounded in what you retrieved (cite URLs or doc titles you
 - Date:
 - Runner:
 - Environment (Claude Code / other):
+- Tier (Tier 1 / Tier 2 / Delta):
 - Authenticated to KOI private docs? (Y/N):
 - Start time:
 - End time:
 - Outcome (Worked=2 / Partial=1 / Failed=0):
+- Blockers (None / Tooling / Auth / Repo missing / Tool failure / Other):
+- Verification status (Verified / Not verified (env blocked) / Not verified (agent gap)):
+- For Delta tests only: KOI value-add vs baseline (Y/N) + 1 sentence why:
 - Quality:
   - Used indexed knowledge (Y/N):
   - Tool reliability (Y/N):
@@ -382,4 +566,40 @@ These manual tests are the source material for automated regression tests. If a 
 - **Suite B/C** (retrieval/perf) when it’s measurable and deterministic, or
 - **Suite D** (agent scenario) when it’s a workflow that needs end-to-end behavior.
 
+The Delta tests (KV-01/02/03) are especially useful to turn into Suite B (retrieval expectations) and Suite D (workflow structure) because they explicitly measure “KOI-grounded vs baseline”.
+
 See `koi-research/docs/eval-framework-design.md:1`.
+
+## Engineering note (optional): Suite B baseline refresh
+
+The automated Suite B retrieval eval uses a committed “known good” baseline for prod:
+- Gold set: `koi-research/evals/suite_b_gold_set.json`
+- Baseline: `koi-research/reports/baselines/prod/suite_b.json`
+
+Refresh the baseline only when you believe the current behavior is correct (even if results changed due to an intentional re-index / ranking change):
+```bash
+cd koi-research
+python3 scripts/run_suite_b.py \
+  --env prod \
+  --koi-api-endpoint https://regen.gaiaai.xyz/api/koi \
+  --gold evals/suite_b_gold_set.json \
+  --write-baseline reports/baselines/prod/suite_b.json
+```
+
+Then open a PR with the baseline change so future runs diff against it.
+
+## Engineering note (optional): Hallucination baseline refresh
+
+Hallucination detection in CI produces `citation_verification.json`. Once CI runs real agent scenarios, we can also diff hallucination rate vs a committed baseline:
+- Baseline: `koi-research/reports/baselines/prod/hallucination.json`
+- Diff script: `koi-research/scripts/compare_hallucination_baseline.py`
+
+Refresh the baseline from a known-good run:
+```bash
+cd koi-research
+python3 scripts/verify-citations.py docs/test-results/<your-latest-run>.md --format json > /tmp/citation_verification.json
+python3 scripts/compare_hallucination_baseline.py \
+  --current /tmp/citation_verification.json \
+  --baseline reports/baselines/prod/hallucination.json \
+  --write-baseline
+```
