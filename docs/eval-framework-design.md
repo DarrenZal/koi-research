@@ -20,9 +20,54 @@ Target: concrete enough to implement in ~1–2 weeks.
 
 ## Non-goals (v0)
 
-- Proving overall “answer quality” across all possible prompts.
+- Proving overall "answer quality" across all possible prompts.
 - Training/fine-tuning.
-- Replacing product usability testing (that’s the Marie protocol in `koi-research/docs/test-protocol-full-stack.md:1`).
+- Replacing product usability testing (see Testing Tracks below).
+
+---
+
+# Testing tracks (manual + automated)
+
+The Jan 6 meeting identified multiple testing tracks with different goals and testers. This automated eval framework complements — but does not replace — manual testing.
+
+## Manual testing tracks
+
+| Track | Focus | Primary tester(s) | Output | Feeds into |
+|-------|-------|-------------------|--------|------------|
+| **A: Code Generation** | Can KOI + coding agent produce working code? | Marie, engineers | Test results in Notion/git | Suite D scenarios |
+| **B: Web2 User Onboarding** | Is the journey from "one link" to value frictionless? | Dave | Journey doc in Notion | UX improvements |
+| **C: Technical Questions** | Can it answer the hardest domain questions accurately? | Becca | Q&A log in Notion | Suite B golden queries |
+| **D: Multi-model/CLI** | Does it work across different models and interfaces? | Gregory | Compatibility notes | Suite D model matrix |
+
+See `docs/test-protocol-full-stack.md` for Track A details.
+
+## How manual testing feeds automated evals
+
+```
+Manual Track A (code gen)     → Suite D scenarios (agent workflows)
+Manual Track B (onboarding)   → UX changes (not automated)
+Manual Track C (tech Qs)      → Suite B golden queries (retrieval)
+Manual Track D (multi-model)  → Suite D model matrix (sonnet/opus/gemini)
+```
+
+When a manual test reveals a critical success or failure mode:
+1. If it's a schema/API mismatch → add to **Suite A** (contract)
+2. If it's "right docs should appear" → add to **Suite B** (retrieval)
+3. If it's a workflow that must not regress → add to **Suite D** (agent scenario)
+
+## Phased rollout
+
+Per the Jan 6 meeting decision:
+
+| Phase | Who | Goal | Checkpoint |
+|-------|-----|------|------------|
+| **1 (now)** | 3-4 focused testers (Marie, Dave, Becca, Gregory) | Find and fix critical issues | Initial test results |
+| **2** | Broader team | Team orientation + validation | "Feature complete" demo |
+| **3** | Partners | External validation with specific asks | Internal validation complete |
+
+This phased approach ensures we don't expose partners to known issues.
+
+---
 
 ## System under test (SUT)
 
@@ -542,10 +587,22 @@ The 20% threshold accommodates some false positives while catching significant h
 
 # Ownership (make it someone's job)
 
-Suggested initial ownership (edit as needed):
+## Automated evals (this framework)
+
 - **Eval framework DRI (engineering):** Darren (build/maintain harness, CI wiring, thresholds, incident triage)
 - **Gold set + scenario curator (product):** Marie (manual test intake → candidate prompts), with engineering support to convert into automated checks
 - **Weekly review:** 15 minutes in Gaia AI standup to review the latest report and decide: fix / adjust thresholds / update gold set
+
+## Manual testing tracks (Phase 1 testers)
+
+| Track | Owner | Deliverable |
+|-------|-------|-------------|
+| A: Code Generation | Marie | Test results per `docs/test-protocol-full-stack.md` |
+| B: Web2 Onboarding | Dave | Journey doc with friction points |
+| C: Technical Questions | Becca | Q&A log with hardest domain questions |
+| D: Multi-model/CLI | Gregory | Compatibility notes (Gemini CLI, etc.) |
+
+All testers submit findings to Notion (or git for Track A) and tag Darren for engineering triage.
 
 ---
 

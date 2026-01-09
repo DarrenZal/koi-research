@@ -1,19 +1,52 @@
-# Full-Stack Code Generation Test Protocol (Marie)
+# Full-Stack Code Generation Test Protocol
 
 > **Origin:** [Regen AI Builders Standup - 2026-01-06](https://www.notion.so/regennetwork/Regen-AI-Builders-Standup-2e025b77eda180e1b7eaf58a28035e1b)
 
-This protocol is designed so a non-technical PM can run repeatable tests and produce feedback that's actionable for engineering.
+This protocol is designed so team members (technical or non-technical) can run repeatable tests and produce feedback that's actionable for engineering. It focuses on **code generation capability** — one of several testing tracks.
 
-## What we're trying to learn (per Zach's "learning goal" framing)
+## Testing tracks overview
+
+This document covers **Track A: Code Generation**. Other testing tracks exist for different goals:
+
+| Track | Focus | Primary tester(s) | See also |
+|-------|-------|-------------------|----------|
+| **A: Code Generation** | Can KOI + coding agent produce working code? | Marie, engineers | This document |
+| **B: Web2 User Onboarding** | Is the journey from "one link" to value frictionless? | Dave | Document journey in Notion |
+| **C: Technical Questions** | Can it answer the hardest domain questions accurately? | Becca | Post results to Notion |
+| **D: Multi-model/CLI** | Does it work across different models and interfaces? | Gregory | Test with Gemini CLI, etc. |
+
+All tracks feed into the same learning goals and eventually the automated eval framework (`docs/eval-framework-design.md`).
+
+## Phased rollout
+
+Per the Jan 6 meeting decision:
+
+1. **Phase 1 (now):** 3-4 focused testers (Marie, Dave, Becca, Gregory) run structured tests
+2. **Phase 2:** Broader team orientation + testing (after "feature complete" checkpoint)
+3. **Phase 3:** Ripple out to partners with specific asks (after internal validation)
+
+This phased approach ensures we find and fix issues before external exposure.
+
+## What we're trying to learn (learning goals framing)
+
+Per Zach's suggestion, frame each testing sprint around learning goals:
+
+> 1. **What's the most important thing to learn this sprint?**
+> 2. **What tests support that learning?**
+> 3. **What do we build to support those tests?**
+
+For Track A (this protocol), our current learning goals are:
 
 1. Can the system go from natural language → working code changes (not just advice)?
 2. Can it safely navigate Regen's real codebases (regen-ledger + MCP stack) using the indexed code/knowledge?
 3. Can it handle "full-stack" workflows that involve planning + implementation + verification (tests/builds) + clear handoff?
 4. Where are the current capability boundaries (what reliably breaks)?
 
+Update these learning goals each sprint based on what you discover.
+
 ## Manual vs Automated
 
-This document describes the **manual test protocol** for human testers (Marie).
+This document describes the **manual test protocol** for Track A (Code Generation) testers.
 
 For **automated regression testing**, see `docs/eval-framework-design.md`:
 - Suite A/B/C run via HTTP in CI (implemented)
@@ -35,13 +68,13 @@ If you only want to check “is the system healthy today?”, look at the latest
 
 ### Recommended (for best signal)
 - Start each test in a clean git working tree (no uncommitted changes).
-- Create a new branch per test (e.g., `marie/test-VC-01`).
+- Create a new branch per test (e.g., `test/VC-01`).
 - Keep a timer (phone is fine).
 
 ### Tooling prerequisites (Tier 1 vs Tier 2)
 
 This protocol intentionally tests two different things:
-- **Tier 1 (Portable):** generation + KOI grounding on any machine (Python + MCP access). Recommended for Marie.
+- **Tier 1 (Portable):** generation + KOI grounding on any machine (Python + MCP access). Recommended for non-technical testers.
 - **Tier 2 (Dev environment):** domain-specific coding with verification (Go/Rust toolchains, local repos, tests).
 
 If a Tier 2 test is blocked by missing tooling, that’s still valuable data — mark it as “Blocked: Tooling” (see scoring).
@@ -66,7 +99,7 @@ Depending on the client, tool names may show up with prefixes (e.g., `mcp__regen
 ### Where to submit results (after you run tests)
 Pick the simplest option available to you:
 - **Option A (preferred):** Paste each completed “Test Result” block into a single Notion page titled `Full-Stack Codegen Test Results — <YYYY-MM-DD>` and share the link in the Gaia AI team channel, tagging Darren.
-- **Option B (if you’re comfortable with git):** Create `koi-research/docs/test-results/` (if needed), then add `koi-research/docs/test-results/<YYYY-MM-DD>-marie.md` with all results blocks and open a PR. Share the PR link in the Gaia AI team channel.
+- **Option B (if you’re comfortable with git):** Create `koi-research/docs/test-results/` (if needed), then add `koi-research/docs/test-results/<YYYY-MM-DD>-track-a.md` with all results blocks and open a PR. Share the PR link in the Gaia AI team channel.
 
 ### Preflight prompt (copy/paste)
 Use this once at the beginning of a testing session to confirm the stack is working:
@@ -155,7 +188,7 @@ Run Tier 1 first. Tier 2 and the Delta tests are optional.
 
 **Prompt (copy/paste):**
 ```text
-Create a small, self-contained Python CLI tool in a new folder `scratch/marie-vc-01/` (create the folder if needed).
+Create a small, self-contained Python CLI tool in a new folder `scratch/track-a-vc-01/` (create the folder if needed).
 
 Requirements:
 1) The CLI reads a JSON file containing a list of ecocredit “batches” with fields:
@@ -174,7 +207,7 @@ Deliverable: code + tests + terminal output from running tests.
 ```
 
 **Success looks like**
-- Creates files under `scratch/marie-vc-01/`
+- Creates files under `scratch/track-a-vc-01/`
 - `python -m unittest` passes
 - Output matches requirements
 
@@ -297,7 +330,7 @@ Constraints:
 
 **Prompt (copy/paste):**
 ```text
-Create a new folder `scratch/marie-sc-01/` containing a minimal CosmWasm smart contract called `greeter`:
+Create a new folder `scratch/track-a-sc-01/` containing a minimal CosmWasm smart contract called `greeter`:
 - Instantiate stores a greeting string
 - Execute can update the greeting
 - Query returns the current greeting
@@ -352,7 +385,7 @@ If the environment is NOT available, stop early and tell me exactly what is miss
 
 **Prompt (copy/paste):**
 ```text
-Build a small “basket token helper” in `scratch/marie-ca-01/` as a single Python script + README.
+Build a small “basket token helper” in `scratch/track-a-ca-01/` as a single Python script + README.
 
 The tool should:
 1) Use KOI search to find authoritative docs about Regen ecocredit baskets and “basket tokens” (limit 5).
