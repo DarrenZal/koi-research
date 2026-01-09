@@ -313,29 +313,29 @@ jobs:
           mkdir -p docs/test-results
 
           # Create results header
-          cat > $RESULTS_FILE << EOF
-          # CI Test Results - ${TIMESTAMP}
-
-          **Trigger:** ${{ github.event_name }}
-          **Model:** ${{ steps.suite.outputs.model }}
-          **Suite:** ${{ steps.suite.outputs.suite }}
-          **Runner:** GitHub Actions
-
-          ---
-
-          ## Preflight
-
-          \`\`\`json
-          $(cat preflight_result.json)
-          \`\`\`
-
-          ---
-
-          ## Test Results
-
-          | Test | Status | Score | Notes |
-          |------|--------|-------|-------|
-          EOF
+          {
+            echo "# CI Test Results - ${TIMESTAMP}"
+            echo ""
+            echo "**Trigger:** ${{ github.event_name }}"
+            echo "**Model:** ${{ steps.suite.outputs.model }}"
+            echo "**Suite:** ${{ steps.suite.outputs.suite }}"
+            echo "**Runner:** GitHub Actions"
+            echo ""
+            echo "---"
+            echo ""
+            echo "## Preflight"
+            echo ""
+            echo '```json'
+            cat preflight_result.json
+            echo '```'
+            echo ""
+            echo "---"
+            echo ""
+            echo "## Test Results"
+            echo ""
+            echo "| Test | Status | Score | Notes |"
+            echo "|------|--------|-------|-------|"
+          } > $RESULTS_FILE
 
           # Placeholder for actual test execution
           # Each test would be run via Claude Code CLI with the exact prompts from the protocol
@@ -465,14 +465,12 @@ jobs:
               --arg reason "hallucination_diff_runner_failed (exit_code=${EXIT_CODE})" \
               '{suite:"hallucination",generated_at:$generated_at,runner_exit_code:($exit_code|tonumber),status:"yellow",reason:$reason}' \
               > "${OUT_JSON}"
-            cat > "${OUT_MD}" << 'MDEOF'
-# Hallucination Baseline Diff
-
-| Field | Value |
-|-------|-------|
-MDEOF
-            echo "| Status | yellow |" >> "${OUT_MD}"
-            echo "| Reason | hallucination_diff_runner_failed (exit_code=${EXIT_CODE}) |" >> "${OUT_MD}"
+            {
+              echo "# Hallucination Baseline Diff"
+              echo ""
+              echo "Status: yellow"
+              echo "Reason: hallucination_diff_runner_failed (exit_code=${EXIT_CODE})"
+            } > "${OUT_MD}"
           fi
 
           STATUS=$(jq -r '.status // "unknown"' "${OUT_JSON}" 2>/dev/null || echo "unknown")
