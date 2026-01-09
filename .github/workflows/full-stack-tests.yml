@@ -465,12 +465,14 @@ jobs:
               --arg reason "hallucination_diff_runner_failed (exit_code=${EXIT_CODE})" \
               '{suite:"hallucination",generated_at:$generated_at,runner_exit_code:($exit_code|tonumber),status:"yellow",reason:$reason}' \
               > "${OUT_JSON}"
-            cat > "${OUT_MD}" << EOF
+            cat > "${OUT_MD}" << 'MDEOF'
 # Hallucination Baseline Diff
 
-- **Status:** yellow
-- **Reason:** hallucination_diff_runner_failed (exit_code=${EXIT_CODE})
-EOF
+| Field | Value |
+|-------|-------|
+MDEOF
+            echo "| Status | yellow |" >> "${OUT_MD}"
+            echo "| Reason | hallucination_diff_runner_failed (exit_code=${EXIT_CODE}) |" >> "${OUT_MD}"
           fi
 
           STATUS=$(jq -r '.status // "unknown"' "${OUT_JSON}" 2>/dev/null || echo "unknown")
