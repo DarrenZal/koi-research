@@ -9,6 +9,7 @@ import os
 import random
 import re
 import string
+import subprocess
 import sys
 import time
 from dataclasses import asdict
@@ -105,6 +106,9 @@ def _extract_bash_command(tool_input: Dict[str, Any]) -> str:
 
 
 def _render_md_report(run: Dict[str, Any]) -> str:
+    if run.get("suite") == "suite_d_delta":
+        return _render_md_report_delta(run)
+
     lines: List[str] = []
     lines.append(f"# Suite D Agent Scenario Results ({run.get('env')})")
     lines.append("")
@@ -162,6 +166,64 @@ def _render_md_report(run: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _render_md_report_delta(run: Dict[str, Any]) -> str:
+    lines: List[str] = []
+    lines.append(f"# Suite D Delta (KOI Value-Add) Results ({run.get('env')})")
+    lines.append("")
+    lines.append(f"- **Generated at:** {run.get('generated_at')}")
+    lines.append(f"- **Model:** {run.get('model')}")
+    lines.append(f"- **KOI API:** {run.get('koi_api_endpoint')}")
+    lines.append("")
+
+    summary = (run.get("koi_value_add_delta") or {}).get("summary") or {}
+    lines.append("## Summary")
+    lines.append("")
+    lines.append(f"- **Overall status:** {summary.get('status')}")
+    lines.append(f"- **Pairs:** {summary.get('total_pairs')} (green={summary.get('green')}, yellow={summary.get('yellow')}, red={summary.get('red')})")
+    if summary.get("avg_verified_rate_delta") is not None:
+        lines.append(f"- **Avg verified_rate Δ (koi-baseline):** {summary.get('avg_verified_rate_delta'):.3f}")
+    if summary.get("avg_citations_delta") is not None:
+        lines.append(f"- **Avg citations Δ (koi-baseline):** {summary.get('avg_citations_delta'):.2f}")
+    lines.append("")
+
+    lines.append("## Pairs")
+    lines.append("")
+    for p in run.get("pairs", []):
+        status = p.get("status") or "unknown"
+        lines.append(f"### {p.get('id')} — {p.get('name')} ({status})")
+        if p.get("reason"):
+            lines.append(f"- **Reason:** {p.get('reason')}")
+
+        base = p.get("baseline") or {}
+        koi = p.get("koi") or {}
+        delta = p.get("delta") or {}
+
+        lines.append("")
+        lines.append("| Metric | Baseline | KOI | Δ |")
+        lines.append("|--------|----------|-----|---|")
+        lines.append(
+            f"| Duration (ms) | {base.get('duration_ms','')} | {koi.get('duration_ms','')} | {delta.get('duration_ms_delta','')} |"
+        )
+        lines.append(
+            f"| Tool calls | {base.get('tool_calls_total','')} | {koi.get('tool_calls_total','')} | {delta.get('tool_calls_total_delta','')} |"
+        )
+        lines.append(
+            f"| Citations (total) | {base.get('citations',{}).get('total_citations','')} | {koi.get('citations',{}).get('total_citations','')} | {delta.get('citations_total_delta','')} |"
+        )
+        lines.append(
+            f"| Verifiable citations | {base.get('citations',{}).get('verifiable_citations','')} | {koi.get('citations',{}).get('verifiable_citations','')} | {delta.get('verifiable_citations_delta','')} |"
+        )
+        lines.append(
+            f"| Verified rate | {base.get('citations',{}).get('verified_rate','')} | {koi.get('citations',{}).get('verified_rate','')} | {delta.get('verified_rate_delta','')} |"
+        )
+        lines.append(
+            f"| Hallucination rate | {base.get('citations',{}).get('hallucination_rate','')} | {koi.get('citations',{}).get('hallucination_rate','')} | {delta.get('hallucination_rate_delta','')} |"
+        )
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 async def _run_prompt_with_sdk(
     prompt: str,
     *,
@@ -185,12 +247,18 @@ async def _run_prompt_with_sdk(
     mcp_servers: Dict[str, Any] = {}
     if enable_mcp:
         # Stdio MCP server running regen-koi-mcp via npx.
+        mcp_env: Dict[str, str] = {"KOI_API_ENDPOINT": koi_api_endpoint}
+        if os.environ.get("KOI_AUTH_TOKEN"):
+            mcp_env["KOI_AUTH_TOKEN"] = os.environ["KOI_AUTH_TOKEN"]
+        if os.environ.get("KOI_USER_EMAIL"):
+            mcp_env["KOI_USER_EMAIL"] = os.environ["KOI_USER_EMAIL"]
+
         mcp_servers = {
             "regen-koi": {
                 "type": "stdio",
                 "command": "npx",
                 "args": ["-y", "regen-koi-mcp@latest"],
-                "env": {"KOI_API_ENDPOINT": koi_api_endpoint},
+                "env": mcp_env,
             }
         }
 
@@ -292,6 +360,101 @@ def _evaluate_checks(
     return len(failures) == 0, failures
 
 
+def _resolve_repo_paths_for_citations(repo_root: Path) -> List[Path]:
+    candidates = [
+        repo_root / "regen-ledger",
+        repo_root,
+        repo_root / "regen-koi-mcp",
+        repo_root.parent / "regen-ledger",
+        repo_root.parent / "regen-koi-mcp",
+    ]
+    unique: List[Path] = []
+    for c in candidates:
+        p = c.resolve()
+        if p.exists() and p not in unique:
+            unique.append(p)
+    return unique
+
+
+def _run_verify_citations_json(
+    *,
+    repo_root: Path,
+    source_file: Path,
+    repo_paths: List[Path],
+    scratch_dir: Path,
+) -> Dict[str, Any]:
+    script_path = (repo_root / "scripts" / "verify-citations.py").resolve()
+    repos_arg = ",".join(str(p) for p in repo_paths)
+    cmd = [
+        sys.executable,
+        str(script_path),
+        str(source_file),
+        "--repos",
+        repos_arg,
+        "--scratch",
+        str(scratch_dir),
+        "--format",
+        "json",
+        "--fail-threshold",
+        "1.0",
+    ]
+    proc = subprocess.run(cmd, cwd=str(repo_root), capture_output=True, text=True)
+    stdout = (proc.stdout or "").strip()
+    if not stdout:
+        raise RuntimeError(f"verify-citations produced no JSON output (exit={proc.returncode}): {proc.stderr[-500:]}")
+    try:
+        data = json.loads(stdout)
+    except Exception as e:
+        raise RuntimeError(f"verify-citations returned invalid JSON (exit={proc.returncode}): {stdout[:500]}") from e
+
+    data["_exit_code"] = proc.returncode
+    if proc.stderr:
+        data["_stderr_tail"] = (proc.stderr.splitlines() or [])[-50:]
+    return data
+
+
+def _citation_summary(verification: Dict[str, Any]) -> Dict[str, Any]:
+    total = int(verification.get("total_citations") or 0)
+    verified = int(verification.get("verified_count") or 0)
+    failed = int(verification.get("failed_count") or 0)
+    skipped = int(verification.get("skipped_count") or 0)
+    verifiable = verified + failed
+    verified_rate = (verified / verifiable) if verifiable else 0.0
+    hallucination_rate = (failed / verifiable) if verifiable else 0.0
+    return {
+        "total_citations": total,
+        "verifiable_citations": verifiable,
+        "verified_count": verified,
+        "failed_count": failed,
+        "skipped_count": skipped,
+        "verified_rate": round(verified_rate, 6),
+        "hallucination_rate": round(hallucination_rate, 6),
+    }
+
+
+def _aggregate_citations(per_file: List[Dict[str, Any]]) -> Dict[str, Any]:
+    total = sum(int(x.get("total_citations") or 0) for x in per_file)
+    verified = sum(int(x.get("verified_count") or 0) for x in per_file)
+    failed = sum(int(x.get("failed_count") or 0) for x in per_file)
+    skipped = sum(int(x.get("skipped_count") or 0) for x in per_file)
+    verifiable = verified + failed
+    verified_rate = (verified / verifiable) if verifiable else 0.0
+    hallucination_rate = (failed / verifiable) if verifiable else 0.0
+    return {
+        "total_citations": total,
+        "verifiable_citations": verifiable,
+        "verified_count": verified,
+        "failed_count": failed,
+        "skipped_count": skipped,
+        "verified_rate": round(verified_rate, 6),
+        "hallucination_rate": round(hallucination_rate, 6),
+    }
+
+
+def _count_tool_calls(tool_call_names: List[str], needle: str) -> int:
+    return sum(1 for n in tool_call_names if _tool_matches_contains(n, needle))
+
+
 async def _run_suite(
     *,
     scenarios: List[Dict[str, Any]],
@@ -327,7 +490,11 @@ async def _run_suite(
 
         # Enable MCP if the scenario expects MCP tool usage.
         checks = sc.get("checks") or {}
-        enable_mcp = bool(checks.get("tool_name_contains"))
+        explicit = sc.get("enable_mcp")
+        if isinstance(explicit, bool):
+            enable_mcp = explicit
+        else:
+            enable_mcp = bool(checks.get("tool_name_contains"))
 
         stderr_lines: List[str] = []
         started = time.time()
@@ -394,22 +561,317 @@ async def _run_suite(
     return run_payload
 
 
+def _traffic_light_from_thresholds(
+    *,
+    baseline: Dict[str, Any],
+    koi: Dict[str, Any],
+    thresholds: Dict[str, Any],
+) -> Tuple[str, str, Dict[str, Any]]:
+    if not baseline.get("passed", False):
+        return "red", "baseline_failed_checks", {}
+    if not koi.get("passed", False):
+        return "red", "koi_failed_checks", {}
+
+    base_cit = baseline.get("citations") or {}
+    koi_cit = koi.get("citations") or {}
+
+    min_verifiable = int(thresholds.get("min_koi_verifiable_citations") or 0)
+    max_halluc = float(thresholds.get("max_koi_hallucination_rate") or 1.0)
+    delta_yellow = float(thresholds.get("min_verified_rate_delta_yellow") or -1.0)
+    delta_red = float(thresholds.get("min_verified_rate_delta_red") or -1.0)
+
+    koi_verifiable = int(koi_cit.get("verifiable_citations") or 0)
+    koi_halluc = float(koi_cit.get("hallucination_rate") or 0.0)
+    if min_verifiable and koi_verifiable < min_verifiable:
+        return "red", f"koi_verifiable_citations<{min_verifiable}", {}
+    if koi_halluc > max_halluc:
+        return "red", f"koi_hallucination_rate>{max_halluc:.2f}", {}
+
+    base_verified_rate = float(base_cit.get("verified_rate") or 0.0)
+    koi_verified_rate = float(koi_cit.get("verified_rate") or 0.0)
+    verified_rate_delta = koi_verified_rate - base_verified_rate
+
+    base_total = int(base_cit.get("total_citations") or 0)
+    koi_total = int(koi_cit.get("total_citations") or 0)
+    citations_total_delta = koi_total - base_total
+
+    base_halluc = float(base_cit.get("hallucination_rate") or 0.0)
+    hallucination_rate_delta = koi_halluc - base_halluc
+
+    base_tool_calls = int(baseline.get("tool_calls_total") or 0)
+    koi_tool_calls = int(koi.get("tool_calls_total") or 0)
+    tool_calls_total_delta = koi_tool_calls - base_tool_calls
+
+    base_verifiable = int(base_cit.get("verifiable_citations") or 0)
+    verifiable_citations_delta = koi_verifiable - base_verifiable
+
+    base_duration = int(baseline.get("duration_ms") or 0)
+    koi_duration = int(koi.get("duration_ms") or 0)
+    duration_ms_delta = koi_duration - base_duration
+
+    delta_payload = {
+        "citations_total_delta": citations_total_delta,
+        "verifiable_citations_delta": verifiable_citations_delta,
+        "verified_rate_delta": round(verified_rate_delta, 6),
+        "hallucination_rate_delta": round(hallucination_rate_delta, 6),
+        "tool_calls_total_delta": tool_calls_total_delta,
+        "duration_ms_delta": duration_ms_delta,
+    }
+
+    if verified_rate_delta < delta_red:
+        return "red", f"verified_rate_delta<{delta_red:.2f}", delta_payload
+    if verified_rate_delta < delta_yellow:
+        return "yellow", f"verified_rate_delta<{delta_yellow:.2f}", delta_payload
+
+    return "green", "within thresholds", delta_payload
+
+
+async def _run_delta_variant(
+    *,
+    variant_name: str,
+    pair: Dict[str, Any],
+    variant: Dict[str, Any],
+    repo_root: Path,
+    env_name: str,
+    model: str,
+    koi_api_endpoint: str,
+    repo_paths_for_citations: List[Path],
+    scratch_dir: Path,
+    run_id: str,
+) -> Dict[str, Any]:
+    prompt_template = str(pair.get("prompt") or "")
+    artifact_paths = pair.get("artifact_paths") or []
+
+    per_run_id = f"{run_id}-{pair.get('id')}-{variant_name}"
+    vars_map = {"RUN_ID": per_run_id}
+    prompt = _substitute(prompt_template, vars_map)
+
+    enable_mcp = bool(variant.get("enable_mcp") is True)
+    checks = variant.get("checks") or {}
+    stderr_lines: List[str] = []
+
+    started = time.time()
+    try:
+        sdk_result = await _run_prompt_with_sdk(
+            prompt,
+            cwd=repo_root,
+            model=model,
+            koi_api_endpoint=koi_api_endpoint,
+            enable_mcp=enable_mcp,
+            stderr_lines=stderr_lines,
+        )
+        tool_calls = sdk_result["tool_calls"]
+        tool_results = sdk_result["tool_results"]
+        assistant_text = sdk_result["assistant_text"]
+        result_message = sdk_result["result"]
+    except Exception as e:
+        duration_ms = int((time.time() - started) * 1000)
+        return {
+            "variant": variant_name,
+            "run_id": per_run_id,
+            "passed": False,
+            "duration_ms": duration_ms,
+            "failures": [f"sdk_error: {e}"],
+            "tool_calls": [],
+            "tool_calls_total": 0,
+            "tool_error_count": 0,
+            "assistant_text": "",
+            "stderr": stderr_lines[-200:],
+            "result": {},
+            "citations": {},
+            "citations_files": [],
+        }
+
+    duration_ms = int((time.time() - started) * 1000)
+
+    ok, failures = _evaluate_checks({"checks": checks}, repo_root=repo_root, variables=vars_map, tool_calls=tool_calls)
+    tool_error_count = sum(1 for r in tool_results if r.get("is_error") is True)
+    tool_call_names = [str(t.get("name") or "") for t in tool_calls]
+
+    # Citation verification (aggregate across artifact files)
+    per_file: List[Dict[str, Any]] = []
+    citation_errors: List[str] = []
+    for p in artifact_paths:
+        if not isinstance(p, str):
+            continue
+        rel = _substitute(p, vars_map)
+        abs_path = (repo_root / rel).resolve()
+        if not abs_path.exists() or not abs_path.is_file():
+            citation_errors.append(f"missing artifact file for citations: {rel}")
+            continue
+        try:
+            verification = _run_verify_citations_json(
+                repo_root=repo_root,
+                source_file=abs_path,
+                repo_paths=repo_paths_for_citations,
+                scratch_dir=scratch_dir,
+            )
+            summary = _citation_summary(verification)
+            summary["source_file"] = rel
+            per_file.append(summary)
+        except Exception as e:
+            citation_errors.append(f"citation_verification_error ({rel}): {e}")
+
+    citations = _aggregate_citations(per_file) if per_file else {}
+    if citation_errors:
+        citations["errors"] = citation_errors
+
+    return {
+        "variant": variant_name,
+        "run_id": per_run_id,
+        "passed": ok,
+        "duration_ms": duration_ms,
+        "failures": failures,
+        "tool_calls": tool_call_names,
+        "tool_calls_total": len(tool_call_names),
+        "tool_error_count": tool_error_count,
+        "assistant_text": assistant_text,
+        "stderr": stderr_lines[-200:],
+        "result": result_message,
+        "citations": citations,
+        "citations_files": per_file,
+        "koi_tool_calls": {
+            "search": _count_tool_calls(tool_call_names, "search"),
+            "query_code_graph": _count_tool_calls(tool_call_names, "query_code_graph"),
+        },
+    }
+
+
+async def _run_delta_suite(
+    *,
+    pairs: List[Dict[str, Any]],
+    thresholds: Dict[str, Any],
+    repo_root: Path,
+    env_name: str,
+    model: str,
+    koi_api_endpoint: str,
+) -> Dict[str, Any]:
+    run_id = f"{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}-{_rand_suffix()}"
+    generated_at = _now_iso()
+
+    repo_paths_for_citations = _resolve_repo_paths_for_citations(repo_root)
+    scratch_dir = (repo_root / "scratch").resolve()
+
+    run_payload: Dict[str, Any] = {
+        "suite": "suite_d_delta",
+        "env": env_name,
+        "generated_at": generated_at,
+        "run_id": run_id,
+        "model": model,
+        "koi_api_endpoint": koi_api_endpoint,
+        "thresholds": thresholds,
+        "pairs": [],
+    }
+
+    counts = {"green": 0, "yellow": 0, "red": 0}
+    verified_rate_deltas: List[float] = []
+    citations_deltas: List[int] = []
+
+    for pair in pairs:
+        pair_id = pair.get("id") or "<missing-id>"
+        pair_name = pair.get("name") or pair_id
+
+        baseline_spec = pair.get("baseline") or {}
+        koi_spec = pair.get("koi") or {}
+
+        baseline = await _run_delta_variant(
+            variant_name="baseline",
+            pair=pair,
+            variant=baseline_spec,
+            repo_root=repo_root,
+            env_name=env_name,
+            model=model,
+            koi_api_endpoint=koi_api_endpoint,
+            repo_paths_for_citations=repo_paths_for_citations,
+            scratch_dir=scratch_dir,
+            run_id=run_id,
+        )
+        koi = await _run_delta_variant(
+            variant_name="koi",
+            pair=pair,
+            variant=koi_spec,
+            repo_root=repo_root,
+            env_name=env_name,
+            model=model,
+            koi_api_endpoint=koi_api_endpoint,
+            repo_paths_for_citations=repo_paths_for_citations,
+            scratch_dir=scratch_dir,
+            run_id=run_id,
+        )
+
+        status, reason, delta_payload = _traffic_light_from_thresholds(baseline=baseline, koi=koi, thresholds=thresholds)
+        counts[status] = counts.get(status, 0) + 1
+
+        # Track averages only when deltas exist.
+        if "verified_rate_delta" in delta_payload:
+            verified_rate_deltas.append(float(delta_payload["verified_rate_delta"]))
+        if "citations_total_delta" in delta_payload:
+            citations_deltas.append(int(delta_payload["citations_total_delta"]))
+
+        run_payload["pairs"].append(
+            {
+                "id": pair_id,
+                "name": pair_name,
+                "status": status,
+                "reason": reason,
+                "baseline": baseline,
+                "koi": koi,
+                "delta": delta_payload,
+            }
+        )
+
+    overall = "green"
+    if counts.get("red", 0) > 0:
+        overall = "red"
+    elif counts.get("yellow", 0) > 0:
+        overall = "yellow"
+
+    summary: Dict[str, Any] = {
+        "status": overall,
+        "total_pairs": len(pairs),
+        "green": counts.get("green", 0),
+        "yellow": counts.get("yellow", 0),
+        "red": counts.get("red", 0),
+        "avg_verified_rate_delta": (sum(verified_rate_deltas) / len(verified_rate_deltas)) if verified_rate_deltas else None,
+        "avg_citations_delta": (sum(citations_deltas) / len(citations_deltas)) if citations_deltas else None,
+    }
+
+    run_payload["koi_value_add_delta"] = {"summary": summary}
+    return run_payload
+
+
 async def _main_async(args: argparse.Namespace) -> int:
     repo_root = Path(args.repo_root).resolve()
     gold_path = Path(args.scenarios).resolve()
     data = _read_json(gold_path)
-    scenarios = data.get("scenarios") or []
-    if not isinstance(scenarios, list) or not scenarios:
-        print(f"No scenarios found in {gold_path}", file=sys.stderr)
-        return 2
+    run: Dict[str, Any]
+    if isinstance(data.get("pairs"), list):
+        pairs = [p for p in (data.get("pairs") or []) if isinstance(p, dict)]
+        if not pairs:
+            print(f"No delta pairs found in {gold_path}", file=sys.stderr)
+            return 2
+        thresholds = data.get("thresholds") or {}
+        run = await _run_delta_suite(
+            pairs=pairs,
+            thresholds=thresholds if isinstance(thresholds, dict) else {},
+            repo_root=repo_root,
+            env_name=args.env,
+            model=args.model,
+            koi_api_endpoint=args.koi_api_endpoint,
+        )
+    else:
+        scenarios = data.get("scenarios") or []
+        if not isinstance(scenarios, list) or not scenarios:
+            print(f"No scenarios found in {gold_path}", file=sys.stderr)
+            return 2
 
-    run = await _run_suite(
-        scenarios=[s for s in scenarios if isinstance(s, dict)],
-        repo_root=repo_root,
-        env_name=args.env,
-        model=args.model,
-        koi_api_endpoint=args.koi_api_endpoint,
-    )
+        run = await _run_suite(
+            scenarios=[s for s in scenarios if isinstance(s, dict)],
+            repo_root=repo_root,
+            env_name=args.env,
+            model=args.model,
+            koi_api_endpoint=args.koi_api_endpoint,
+        )
 
     if args.out_json:
         _write_json(Path(args.out_json), run)
@@ -419,6 +881,12 @@ async def _main_async(args: argparse.Namespace) -> int:
         _write_text(Path(args.out_md), md)
 
     # Exit non-zero if any scenario failed.
+    if run.get("suite") == "suite_d_delta":
+        status = ((run.get("koi_value_add_delta") or {}).get("summary") or {}).get("status") or "unknown"
+        if status == "red":
+            return 1
+        return 0
+
     if (run.get("summary") or {}).get("failed", 0) > 0:
         return 1
     return 0

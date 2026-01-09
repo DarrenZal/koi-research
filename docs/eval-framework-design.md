@@ -150,6 +150,20 @@ python3 scripts/run_suite_b.py --env prod --write-baseline reports/baselines/pro
 - Seed initial Suite D scenarios from the manual protocol: `koi-research/docs/test-protocol-full-stack.md:1`.
 - Promote only when the acceptance criteria can be checked structurally (files changed, tests run, tool calls made), not by subjective grading.
 
+**Suite D Delta (KOI value-add A/B)**
+
+To answer “does KOI actually help (beyond a strong coding agent)?” we run **paired scenarios**:
+- **Baseline:** MCP disabled
+- **KOI-grounded:** KOI MCP enabled
+
+Implementation:
+- Spec: `koi-research/evals/suite_d_delta_scenarios.json`
+- Runner: `koi-research/scripts/run_suite_d.py` (auto-detects `pairs` format)
+- Output metric: `koi_value_add_delta` (citations, verified citation rate, tool calls, duration deltas)
+- Surfaced in CI + dashboard as signal `koi_value_add_delta`
+
+Triage reference: `koi-research/docs/runbooks/eval-triage.md:1`.
+
 ---
 
 # Golden dataset design
@@ -439,20 +453,19 @@ Recommended workflow integration:
 - [x] Hallucination detection (`scripts/verify-citations.py`)
 - [x] CI workflow with artifacts and summary
 
-## Phase 2 — Agent SDK for Suite D (next)
-1. Install Claude Agent SDK in test environment
-2. Create `scripts/run_suite_d.py` harness using Agent SDK
-3. Port 2-3 scenarios from `test-protocol-full-stack.md`:
-   - VC-01 (Python CLI + tests)
-   - CA-01 (basket token helper)
-   - NU-02 (upgrade planning)
-4. Add structural checks: tools called, files created, sections present
-5. Integrate with CI (nightly, non-blocking initially)
+## Phase 2 — Agent SDK for Suite D (done)
+- [x] Install Claude Agent SDK in test environment
+- [x] `scripts/run_suite_d.py` harness using Agent SDK
+- [x] Port initial scenarios from `test-protocol-full-stack.md` into `evals/suite_d_scenarios.json`
+- [x] Add structural checks (tools called, files created, sections present)
+- [x] Integrate with CI (nightly, non-blocking)
+- [x] Add Suite D Delta (KOI value-add A/B) as paired scenarios in `evals/suite_d_delta_scenarios.json`
 
 ## Phase 3 — Alerts + baseline tracking
-1. Baseline comparison for hallucination rate trends
-2. GitHub issue creation on red regressions
-3. Weekly summary comment to tracking issue
+- [x] Baseline comparison for hallucination rate trends (`scripts/compare_hallucination_baseline.py`)
+- [x] GitHub dashboard issue comment on red/yellow regressions (`actions/github-script`)
+- [ ] Weekly summary comment to tracking issue (green runs too, not only regressions)
+- [ ] Baseline tracking for Suite D Delta (trend KOI value-add deltas over time)
 
 ---
 

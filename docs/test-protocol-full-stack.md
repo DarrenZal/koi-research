@@ -17,8 +17,10 @@ This document describes the **manual test protocol** for human testers (Marie).
 
 For **automated regression testing**, see `docs/eval-framework-design.md`:
 - Suite A/B/C run via HTTP in CI (implemented)
-- Suite D scenarios will be automated using the [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), which provides programmatic access to the same agent capabilities
+- Suite D scenarios are automated using the [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-code/sdk), which provides programmatic access to the same agent capabilities
+- Suite D Delta runs paired A/B scenarios (baseline vs KOI-grounded) and reports a `koi_value_add_delta` signal
 - Hallucination detection runs automatically on test results (`scripts/verify-citations.py`)
+- Triage: `docs/runbooks/eval-triage.md`.
 
 ## 0) Setup (15–30 min, once)
 

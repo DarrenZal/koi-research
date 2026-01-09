@@ -231,7 +231,7 @@ jobs:
           exit $EXIT_CODE
 
       - name: Install Claude Agent SDK (Suite D)
-        if: steps.suite.outputs.suite == 'tier1' || steps.suite.outputs.suite == 'all'
+        if: steps.suite.outputs.suite == 'tier1' || steps.suite.outputs.suite == 'delta' || steps.suite.outputs.suite == 'all'
         continue-on-error: true
         run: |
           python3 -m pip install --quiet claude-agent-sdk==0.1.19
@@ -259,6 +259,47 @@ jobs:
             --out-json "${OUT_JSON}"
           EXIT_CODE=$?
           set -e
+
+          exit $EXIT_CODE
+
+      - name: Suite D Delta (Agent SDK) — KOI value-add A/B
+        id: suite_d_delta
+        if: steps.suite.outputs.suite == 'tier1' || steps.suite.outputs.suite == 'delta' || steps.suite.outputs.suite == 'all'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          TIMESTAMP=$(date +%Y-%m-%d-%H%M)
+          OUT_MD="docs/test-results/${TIMESTAMP}-suite-d-delta.md"
+          OUT_JSON="reports/evals/prod/${TIMESTAMP}_suite_d_delta.json"
+
+          echo "suite_d_delta_md=${OUT_MD}" >> $GITHUB_OUTPUT
+          echo "suite_d_delta_json=${OUT_JSON}" >> $GITHUB_OUTPUT
+
+          set +e
+          python3 scripts/run_suite_d.py \
+            --env prod \
+            --model "${{ steps.suite.outputs.model }}" \
+            --koi-api-endpoint "${KOI_API_ENDPOINT}" \
+            --scenarios evals/suite_d_delta_scenarios.json \
+            --out-md "${OUT_MD}" \
+            --out-json "${OUT_JSON}"
+          EXIT_CODE=$?
+          set -e
+
+          # If the runner failed before writing its output JSON, synthesize a red status
+          # so downstream alerting can still work.
+          if [ ! -f "${OUT_JSON}" ]; then
+            echo "Suite D delta runner did not produce ${OUT_JSON}; synthesizing red status."
+            jq -n \
+              --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              --arg exit_code "${EXIT_CODE}" \
+              --arg reason "suite_d_delta_runner_failed (exit_code=${EXIT_CODE})" \
+              '{suite:"suite_d_delta",generated_at:$generated_at,runner_exit_code:($exit_code|tonumber),koi_value_add_delta:{summary:{status:"red",reason:$reason}}}' \
+              > "${OUT_JSON}"
+          fi
+
+          STATUS=$(jq -r '.koi_value_add_delta.summary.status // "unknown"' "${OUT_JSON}" 2>/dev/null || echo "unknown")
+          echo "status=${STATUS}" >> $GITHUB_OUTPUT
 
           exit $EXIT_CODE
 
@@ -492,6 +533,13 @@ EOF
             cat "${{ steps.suite_b.outputs.suite_b_md }}" >> $GITHUB_STEP_SUMMARY
           fi
 
+          # Suite D Delta (KOI value-add) summary
+          if [ -n "${{ steps.suite_d_delta.outputs.suite_d_delta_md || '' }}" ] && [ -f "${{ steps.suite_d_delta.outputs.suite_d_delta_md }}" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Suite D Delta (KOI Value-Add)" >> $GITHUB_STEP_SUMMARY
+            cat "${{ steps.suite_d_delta.outputs.suite_d_delta_md }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
           # Add hallucination detection results
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Citation Verification (Hallucination Detection)" >> $GITHUB_STEP_SUMMARY
@@ -553,6 +601,11 @@ EOF
             const halluc = hallucPath ? readJson(hallucPath) : null;
             const hallucStatus = halluc?.status || (halluc ? 'unknown' : 'not_run');
 
+            // Suite D Delta (KOI value-add) status (if available)
+            const deltaPath = `${{ steps.suite_d_delta.outputs.suite_d_delta_json || '' }}`;
+            const delta = deltaPath ? readJson(deltaPath) : null;
+            const deltaStatus = delta?.koi_value_add_delta?.summary?.status || (delta ? 'unknown' : 'not_run');
+
             const contractOutcome = `${{ steps.contract_query_types.outcome }}`;
             const preflightStatus = preflight?.preflight || 'unknown';
             const preflightIsRed = preflightStatus !== 'pass';
@@ -561,6 +614,7 @@ EOF
               { name: 'preflight', status: preflightIsRed ? 'red' : 'green' },
               { name: 'contract_query_types', status: contractOutcome === 'failure' ? 'red' : 'green' },
               { name: 'suite_b', status: suiteBStatus },
+              { name: 'koi_value_add_delta', status: deltaStatus },
               { name: 'hallucination', status: hallucStatus },
             ];
 
@@ -605,6 +659,16 @@ EOF
               lines.push(`- pass_rate: ${(suiteB.summary?.pass_rate ?? 0).toFixed(2)}`);
               lines.push(`- baseline_pass_rate: ${(suiteB.baseline_diff?.baseline_pass_rate ?? 0).toFixed(2)}`);
               lines.push(`- pass_rate_drop: ${(suiteB.baseline_diff?.pass_rate_drop ?? 0).toFixed(2)}`);
+            }
+            if (delta?.koi_value_add_delta?.summary) {
+              const s = delta.koi_value_add_delta.summary;
+              lines.push('');
+              lines.push('### Suite D Delta (KOI Value-Add)');
+              lines.push(`- status: ${deltaStatus}`);
+              if (s.reason) lines.push(`- reason: ${s.reason}`);
+              if (s.total_pairs !== undefined) lines.push(`- pairs: ${s.total_pairs} (green=${s.green ?? 0}, yellow=${s.yellow ?? 0}, red=${s.red ?? 0})`);
+              if (s.avg_verified_rate_delta !== undefined && s.avg_verified_rate_delta !== null) lines.push(`- avg_verified_rate_delta: ${s.avg_verified_rate_delta}`);
+              if (s.avg_citations_delta !== undefined && s.avg_citations_delta !== null) lines.push(`- avg_citations_delta: ${s.avg_citations_delta}`);
             }
             if (halluc?.status) {
               lines.push('');
