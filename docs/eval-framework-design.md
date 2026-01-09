@@ -551,11 +551,15 @@ Suggested initial ownership (edit as needed):
 
 # Open questions (prioritized)
 
-## P0 (blocks Week 1)
-1. **Where to run evals:** GitHub Actions vs a dedicated nightly runner VM (rate limiting, network access).
-2. **Environment targets:** staging endpoint(s) vs prod (and which is the “baseline of record”).
-3. **Tool output format:** standardize “raw JSON for eval harness” across tools (recommended).
+## Resolved (v0)
+- **Runner:** GitHub Actions nightly + manual dispatch (see `.github/workflows/full-stack-tests.yml`).
+- **Baseline environment of record:** prod (`KOI_API_ENDPOINT=https://regen.gaiaai.xyz/api/koi`).
+- **Auth in CI:** `KOI_AUTH_TOKEN` provisioned for private-doc access (where applicable).
 
-## P1 (can land after harness works)
-4. **Auth in CI:** do we provision a limited-scope token for private Notion retrieval tests, or keep those as manual-only?
-5. **Model pinning details:** confirm exact model IDs for “Sonnet”/“Opus”, temperature, and any provider credentials for scheduled runs.
+## P0 (still important)
+1. **Model pinning details:** confirm the exact model IDs used by the Agent SDK runner (for “sonnet”/“opus”), plus temperature/seed controls (if available), so drift is attributable.
+2. **Tool output standardization:** standardize “raw JSON for eval harness” across MCP tools (so Suite A/B/C can avoid brittle parsing).
+
+## P1 (after 1–2 weeks of runs)
+3. **Staging vs prod:** add a staging endpoint + baselines to catch regressions before prod.
+4. **Delta trending:** commit a baseline for `koi_value_add_delta` and track trends over time (not just red/yellow alerts).

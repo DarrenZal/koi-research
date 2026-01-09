@@ -22,6 +22,8 @@ For **automated regression testing**, see `docs/eval-framework-design.md`:
 - Hallucination detection runs automatically on test results (`scripts/verify-citations.py`)
 - Triage: `docs/runbooks/eval-triage.md`.
 
+If you only want to check “is the system healthy today?”, look at the latest GitHub Actions run + the **KOI Eval Dashboard** issue. The manual protocol is for discovering new failure modes and capability boundaries.
+
 ## 0) Setup (15–30 min, once)
 
 ### Required
