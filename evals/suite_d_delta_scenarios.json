@@ -113,6 +113,61 @@
           ]
         }
       }
+    },
+    {
+      "id": "delta_kv_03",
+      "name": "KV-03 (Delta): Registry Agent — baseline vs KOI-grounded",
+      "notes": "This test benefits from authentication for private Notion docs. If not authenticated, the KOI run will use public sources only, which may reduce the delta signal.",
+      "prompt": "Describe what the \"Registry Agent\" does at Regen Network and produce a \"Registry Review Report\" markdown template.\n\nOutput:\n- Create a new folder `scratch/suite-d/{{RUN_ID}}/delta-kv-03/`.\n- Write your deliverable to `scratch/suite-d/{{RUN_ID}}/delta-kv-03/report.md`.\n\nUse EXACTLY these section headings in report.md:\n- Registry Agent Overview\n- Report Template\n  - Required Sections\n  - Checklist\n  - Evidence Fields\n  - Scoring\n- Sources\n- Tools used\n- Uncertainties\n\nContent requirements:\n1) Registry Agent Overview: 2–4 sentences describing the role.\n2) Report Template: A structured markdown template with required sections, checklists, evidence fields, and a scoring section.\n3) Sources: include 3+ citations if tools are available. If not, explain uncertainty.\n4) Tools used: if tools are available, list the tool calls you ran; if not, explicitly say \"No tools available\".\n5) Uncertainties: anything you could not verify.\n\nImportant:\n- If KOI MCP tools are available, use them to ground the report (at minimum run `search` with query=\"Registry Agent\").\n- If KOI MCP tools are not available, proceed anyway but be explicit about uncertainty and do not invent citations.\n",
+      "artifact_paths": [
+        "scratch/suite-d/{{RUN_ID}}/delta-kv-03/report.md"
+      ],
+      "baseline": {
+        "enable_mcp": false,
+        "checks": {
+          "path_exists": [
+            "scratch/suite-d/{{RUN_ID}}/delta-kv-03/report.md"
+          ],
+          "file_contains": [
+            {
+              "path": "scratch/suite-d/{{RUN_ID}}/delta-kv-03/report.md",
+              "contains": [
+                "Registry Agent",
+                "Checklist",
+                "Evidence",
+                "Scoring",
+                "Tools used",
+                "Uncertainties"
+              ]
+            }
+          ]
+        }
+      },
+      "koi": {
+        "enable_mcp": true,
+        "checks": {
+          "path_exists": [
+            "scratch/suite-d/{{RUN_ID}}/delta-kv-03/report.md"
+          ],
+          "file_contains": [
+            {
+              "path": "scratch/suite-d/{{RUN_ID}}/delta-kv-03/report.md",
+              "contains": [
+                "Registry Agent",
+                "Checklist",
+                "Evidence",
+                "Scoring",
+                "Sources",
+                "Tools used",
+                "Uncertainties"
+              ]
+            }
+          ],
+          "tool_name_contains": [
+            "search"
+          ]
+        }
+      }
     }
   ]
 }

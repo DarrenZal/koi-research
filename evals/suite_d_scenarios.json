@@ -71,6 +71,55 @@
           "query_code_graph"
         ]
       }
+    },
+    {
+      "id": "sd_vc_02",
+      "name": "VC-02 (Suite D): query_code_graph contract sanity",
+      "prompt": "This is a contract sanity check for query_code_graph to detect schema drift between the MCP tool schema and the backend API.\n\nTask:\n1) Call query_code_graph with query_type=\"list_repos\" (should succeed) and paste the result.\n2) Call query_code_graph with query_type=\"find_call_graph\" and entity_name=\"CreateBatch\" (it may return 0 results, but should not error as an invalid query_type). Paste the result or error.\n3) Try calling query_code_graph with query_type=\"list_keepers\" (expected: tool rejects it as an invalid query_type since it's not in the enum). Paste the error.\n4) Create a file `scratch/suite-d/{{RUN_ID}}/vc-02/contract_sanity_report.md` with:\n   - Results from each test\n   - Schema drift analysis: are there query_types accepted that shouldn't be, or rejected that should be?\n   - A concrete automated contract test suggestion to prevent future drift\n\nDeliverable: The contract sanity report documenting your findings.",
+      "checks": {
+        "path_exists": [
+          "scratch/suite-d/{{RUN_ID}}/vc-02/contract_sanity_report.md"
+        ],
+        "file_contains": [
+          {
+            "path": "scratch/suite-d/{{RUN_ID}}/vc-02/contract_sanity_report.md",
+            "contains": [
+              "list_repos",
+              "find_call_graph",
+              "list_keepers",
+              "drift"
+            ]
+          }
+        ],
+        "tool_name_contains": [
+          "query_code_graph"
+        ]
+      }
+    },
+    {
+      "id": "sd_ca_02",
+      "name": "CA-02 (Suite D): Registry Agent report template",
+      "prompt": "Using KOI search, find the most relevant internal/public documentation about:\n- Registry Agent responsibilities\n- Project review / monitoring documentation for Regen Registry\n\nThen generate a \"Registry Review Report\" markdown template in `scratch/suite-d/{{RUN_ID}}/ca-02/registry_review_template.md` with:\n- Required sections for a registry review\n- Checklists for reviewers\n- Evidence fields (what documentation/proof is needed)\n- A scoring section with criteria\n- A Sources section citing the documents you found (URLs or doc titles)\n- A Tools used section listing the KOI tool calls you ran\n\nThe template must be grounded in what you retrieved from KOI search. If you cannot find specific information, explicitly state what is missing.\n\nDeliverable: A structured, auditable registry review template grounded in retrieved sources.",
+      "checks": {
+        "path_exists": [
+          "scratch/suite-d/{{RUN_ID}}/ca-02/registry_review_template.md"
+        ],
+        "file_contains": [
+          {
+            "path": "scratch/suite-d/{{RUN_ID}}/ca-02/registry_review_template.md",
+            "contains": [
+              "Checklist",
+              "Evidence",
+              "Scoring",
+              "Sources",
+              "Tools used"
+            ]
+          }
+        ],
+        "tool_name_contains": [
+          "search"
+        ]
+      }
     }
   ]
 }
