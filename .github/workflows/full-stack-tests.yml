@@ -127,9 +127,17 @@ jobs:
             echo "suite=${{ inputs.test_suite }}" >> $GITHUB_OUTPUT
             echo "model=${{ inputs.model }}" >> $GITHUB_OUTPUT
           else
-            # Nightly runs use Tier 1 (portable) tests with sonnet
-            echo "suite=tier1" >> $GITHUB_OUTPUT
-            echo "model=sonnet" >> $GITHUB_OUTPUT
+            # Nightly runs use preflight-only (HTTP-based, no LLM cost)
+            # Suite D (LLM-based) runs weekly on Sundays to save costs
+            if [ "${{ github.event.schedule }}" == "0 6 * * 0" ]; then
+              # Sunday 6am UTC: run full suite including Suite D
+              echo "suite=all" >> $GITHUB_OUTPUT
+              echo "model=sonnet" >> $GITHUB_OUTPUT
+            else
+              # Daily 2am UTC: run only HTTP-based tests (free)
+              echo "suite=preflight-only" >> $GITHUB_OUTPUT
+              echo "model=sonnet" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Run Backend Preflight Check (KOI API)
