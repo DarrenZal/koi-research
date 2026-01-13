@@ -161,7 +161,8 @@ Show the install command and test prompts.
 ### For everyone:
 1. **Install:** `claude mcp add regen-koi npx regen-koi-mcp@latest`
 2. **Run one Tier 1 test** from the protocol (takes 20 min)
-3. **Report results** in Slack or the Notion page
+3. **Submit feedback directly:** Use the new `submit_feedback` tool in Claude Code
+4. **Or report in Slack** or the Notion page
 
 ### Specific asks:
 | Person | Ask |
@@ -203,7 +204,12 @@ If time permits, show Claude Code with KOI MCP:
 # In terminal
 claude
 > What repositories are indexed in KOI?
+
+# Show the new feedback tool (full stack demo)
+> Submit feedback: rating 5, category success, notes "Demo went well!"
 ```
+
+This demonstrates the full stack: MCP tool → Backend API → PostgreSQL → Confirmation.
 
 ---
 
@@ -220,7 +226,8 @@ claude
 - Manual testing: Uses your normal Claude Code credits
 
 ### "What if I find a bug?"
-- Post in Slack with the prompt you used and what happened
+- **Easiest:** Use `submit_feedback` directly in Claude Code - it captures session context automatically
+- Or post in Slack with the prompt you used and what happened
 - Bonus: fill out the test result template from the protocol
 
 ### "What about the Regen App embedding Marie mentioned?"
