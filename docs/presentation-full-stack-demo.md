@@ -1,4 +1,4 @@
-# KOI MCP Testing Infrastructure - Team Presentation
+# KOI MCP Testing Infrastructure - Team Demo
 
 > **Duration:** 5-10 minutes
 > **Audience:** Sam, Marie, Alexander, Regen team
@@ -6,19 +6,23 @@
 > 1. Design test protocol for code generation capability
 > 2. Design ongoing eval testing framework for MCP stack
 > **Presenter:** Darren
+> **Format:** Screen sharing (no slides)
 
 ---
 
 ## Before You Start (Setup)
 
-Have these ready:
-1. This script
-2. The CI run results: https://github.com/DarrenZal/koi-research/actions
-3. Team quick-start link: `docs/team-quick-start.md`
+Have these browser tabs ready:
+1. **CI Dashboard:** https://github.com/DarrenZal/koi-research/actions
+2. **Test Protocol:** https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/test-protocol-full-stack.md
+3. **Eval Framework:** https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/eval-framework-design.md
+4. **User Guide:** https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/docs/FULL_STACK_USER_GUIDE.md
+
+Optional: Terminal with Claude Code ready for live demo
 
 ---
 
-## SLIDE 1: Context - What We're Testing (1 min)
+## DEMO 1: Context - What We're Testing (1 min)
 
 ### Say:
 > "From the Jan 6 meeting, I had two deliverables: design a test protocol for code generation, and design an ongoing eval framework. Here's what we built."
@@ -31,12 +35,15 @@ Have these ready:
 
 ---
 
-## SLIDE 2: Deliverable 1 - Test Protocol (2 min)
+## DEMO 2: Deliverable 1 - Test Protocol (2 min)
 
 ### Say:
 > "First deliverable: a structured test protocol for humans to run."
 
-### Show: `docs/test-protocol-full-stack.md`
+### Show on screen:
+**Open:** https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/test-protocol-full-stack.md
+
+Scroll through the document as you explain:
 
 ### Structure:
 | Tier | Tests | Who runs it | What it tests |
@@ -56,12 +63,15 @@ Have these ready:
 
 ---
 
-## SLIDE 3: Deliverable 2 - Eval Framework (2 min)
+## DEMO 3: Deliverable 2 - Eval Framework (2 min)
 
 ### Say:
 > "Second deliverable: automated testing that runs continuously. Because as Zach said, 'systems are weird and non-deterministic - small changes can break things.'"
 
-### Show: `docs/eval-framework-design.md`
+### Show on screen:
+**Open:** https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/eval-framework-design.md
+
+Scroll through as you explain:
 
 ### The suites:
 | Suite | What it tests | How it runs | Cost |
@@ -82,7 +92,10 @@ Have these ready:
 
 ---
 
-## SLIDE 4: Hallucination Detection (1 min)
+## DEMO 4: Hallucination Detection (1 min)
+
+### Show on screen:
+Stay on the eval-framework doc, scroll to the hallucination section, or show a terminal with a recent test output.
 
 ### Say:
 > "A key part of the framework: we verify every citation the agent produces."
@@ -108,7 +121,12 @@ Result: verified ✓ or hallucinated ✗
 
 ---
 
-## SLIDE 5: Results - It's Working (1 min)
+## DEMO 5: Results - It's Working (1 min)
+
+### Show on screen:
+**Open:** https://github.com/DarrenZal/koi-research/actions
+
+Click into the latest successful run to show the green checkmarks.
 
 ### Say:
 > "We ran the full suite. Here's what we found."
@@ -130,7 +148,12 @@ Result: verified ✓ or hallucinated ✗
 
 ---
 
-## SLIDE 6: How You Participate (1 min)
+## DEMO 6: How You Participate (1 min)
+
+### Show on screen:
+**Open:** https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/docs/FULL_STACK_USER_GUIDE.md
+
+Show the install command and test prompts.
 
 ### Say:
 > "Here's how each of you can help validate this."
@@ -153,7 +176,7 @@ Result: verified ✓ or hallucinated ✗
 
 ---
 
-## SLIDE 7: Next Steps (30 sec)
+## DEMO 7: Next Steps (30 sec)
 
 ### Say:
 > "Here's the plan."
@@ -164,7 +187,7 @@ Result: verified ✓ or hallucinated ✗
 | **Next week** | Address feedback, fix gaps |
 | **After validation** | Partner rollout with specific asks |
 
-### Share in chat:
+### Paste in chat/Slack:
 ```
 Full Stack Guide: https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/docs/FULL_STACK_USER_GUIDE.md
 Test Protocol: https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/test-protocol-full-stack.md
@@ -173,6 +196,14 @@ CI Dashboard: https://github.com/DarrenZal/koi-research/actions
 
 ### Close:
 > "Questions?"
+
+### Optional live demo:
+If time permits, show Claude Code with KOI MCP:
+```bash
+# In terminal
+claude
+> What repositories are indexed in KOI?
+```
 
 ---
 
