@@ -27,7 +27,7 @@ Open these tabs:
 **Do:** Show https://github.com/DarrenZal/koi-research/actions
 
 **Say:**
-> "We have automated tests running nightly. Green means the system is healthy - search works, code graph works, no regressions."
+> "We have automated tests - free health checks run nightly, LLM-based tests run weekly to save costs. Green means the system is healthy."
 
 **Point out:** Latest run status (green/red)
 
