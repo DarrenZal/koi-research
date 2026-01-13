@@ -80,7 +80,7 @@ This protocol intentionally tests two different things:
 
 If a Tier 2 test is blocked by missing tooling, that’s still valuable data — mark it as “Blocked: Tooling” (see scoring).
 
-If you want a consistent Tier 2 environment without installing local toolchains, use the devcontainer described in `.devcontainer/README.md` (VS Code “Reopen in Container” or Codespaces).
+If you want a consistent Tier 2 environment without installing local toolchains, use the devcontainer described in [`.devcontainer/README.md`](.devcontainer/README.md) (VS Code "Reopen in Container" or Codespaces).
 
 ### Tooling check prompt (copy/paste)
 Run this once before starting Tier 2 tests:
@@ -99,8 +99,9 @@ Depending on the client, tool names may show up with prefixes (e.g., `mcp__regen
 
 ### Where to submit results (after you run tests)
 Pick the simplest option available to you:
-- **Option A (preferred):** Paste each completed “Test Result” block into a single Notion page titled `Full-Stack Codegen Test Results — <YYYY-MM-DD>` and share the link in the Gaia AI team channel, tagging Darren.
-- **Option B (if you’re comfortable with git):** Create `koi-research/docs/test-results/` (if needed), then add `koi-research/docs/test-results/<YYYY-MM-DD>-track-a.md` with all results blocks and open a PR. Share the PR link in the Gaia AI team channel.
+- **Option A (easiest):** Use the `submit_feedback` MCP tool directly in Claude Code. Just say: `"Submit feedback: rating X, category success/partial/bug, notes 'description of what happened'"`. This automatically captures session context and stores it on the backend.
+- **Option B (preferred for detailed results):** Paste each completed "Test Result" block into a single Notion page titled `Full-Stack Codegen Test Results — <YYYY-MM-DD>` and share the link in the Gaia AI team channel, tagging Darren.
+- **Option C (if you're comfortable with git):** Create `koi-research/docs/test-results/` (if needed), then add `koi-research/docs/test-results/<YYYY-MM-DD>-track-a.md` with all results blocks and open a PR. Share the PR link in the Gaia AI team channel.
 
 ### Preflight prompt (copy/paste)
 Use this once at the beginning of a testing session to confirm the stack is working:
