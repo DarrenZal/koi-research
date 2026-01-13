@@ -1,8 +1,10 @@
-# Full Stack KOI MCP - Team Presentation Script
+# KOI MCP Testing Infrastructure - Team Presentation
 
 > **Duration:** 5-10 minutes
 > **Audience:** Sam, Marie, Alexander, Regen team
-> **Goal:** Demonstrate "AI assistant with full awareness of Regen tech systems"
+> **Deliverables from Jan 6 meeting:**
+> 1. Design test protocol for code generation capability
+> 2. Design ongoing eval testing framework for MCP stack
 > **Presenter:** Darren
 
 ---
@@ -10,175 +12,198 @@
 ## Before You Start (Setup)
 
 Have these ready:
-1. Terminal with the demo output from `scratch/full-stack-demo/`
-2. This script open for reference
-3. Team quick-start link ready to share: `koi-research/docs/team-quick-start.md`
+1. This script
+2. The CI run results: https://github.com/DarrenZal/koi-research/actions
+3. Team quick-start link: `docs/team-quick-start.md`
 
 ---
 
-## SLIDE 1: The Goal (1 min)
+## SLIDE 1: Context - What We're Testing (1 min)
 
 ### Say:
-> "Sam, Marie, and Alexander all mentioned the same goal: an AI assistant with full awareness of Regen tech systems. Today I'll show you what we built and how you can start using it."
+> "From the Jan 6 meeting, I had two deliverables: design a test protocol for code generation, and design an ongoing eval framework. Here's what we built."
 
-### Key points:
-- This is the "Full Stack" functionality on the KOI MCP
-- Two MCPs working together:
-  - **KOI MCP** → Knowledge (48K docs, 31K code entities, internal Notion)
-  - **Ledger MCP** → On-chain state (balances, proposals, credits)
+### Context on KOI value-add:
+> "Quick context on why this matters: Claude Code can read local repos. But KOI provides access to everything else - forum discussions, internal Notion, community channels, and on-chain state. It's organizational memory, not just code search."
 
-### Show install command:
-```bash
-claude mcp add regen-koi npx regen-koi-mcp@latest
+### The question we're answering:
+> "How do we know it actually works? And how do we catch it when it breaks?"
+
+---
+
+## SLIDE 2: Deliverable 1 - Test Protocol (2 min)
+
+### Say:
+> "First deliverable: a structured test protocol for humans to run."
+
+### Show: `docs/test-protocol-full-stack.md`
+
+### Structure:
+| Tier | Tests | Who runs it | What it tests |
+|------|-------|-------------|---------------|
+| **Tier 1 (Portable)** | VC-01, VC-02, CA-01, CA-02, NU-02 | Anyone with Claude Code | Can it generate code + use KOI tools? |
+| **Tier 2 (Dev env)** | NU-01, SC-01, SC-02 | Engineers with Go/Rust | Can it work in real regen-ledger? |
+| **Delta (A/B)** | KV-01, KV-02, KV-03 | Anyone | Does KOI add value vs baseline Claude? |
+
+### Key features:
+- **Exact prompts to copy/paste** - no ambiguity
+- **Scoring rubric** - Worked (2), Partial (1), Failed (0)
+- **Hallucination awareness** - every test requires citations
+- **Phased rollout** - 3-4 testers first (Marie, Dave, Becca, Gregory), then broader team
+
+### Say:
+> "The protocol is designed so non-engineers can run tests and produce actionable feedback. Just copy the prompt, run it, fill out the result template."
+
+---
+
+## SLIDE 3: Deliverable 2 - Eval Framework (2 min)
+
+### Say:
+> "Second deliverable: automated testing that runs continuously. Because as Zach said, 'systems are weird and non-deterministic - small changes can break things.'"
+
+### Show: `docs/eval-framework-design.md`
+
+### The suites:
+| Suite | What it tests | How it runs | Cost |
+|-------|---------------|-------------|------|
+| **A: Contract** | MCP schema matches backend | HTTP calls | Free |
+| **B: Retrieval** | Search returns correct docs | HTTP calls + golden queries | Free |
+| **C: Health** | API is responding | HTTP preflight | Free |
+| **D: Agent** | Claude can complete real tasks | Claude Agent SDK | ~$2/run |
+| **D Delta** | KOI adds value vs baseline | A/B comparison | ~$1.65/run |
+
+### Schedule:
+- **Nightly (2am UTC):** Suites A/B/C (free health checks)
+- **Weekly (Sunday 6am):** Full suite including D (LLM-based, ~$3.62)
+- **On-demand:** Manual trigger anytime
+
+### Say:
+> "The expensive LLM tests run weekly to save costs - about $15/month instead of $109. But we can trigger manually anytime we push changes."
+
+---
+
+## SLIDE 4: Hallucination Detection (1 min)
+
+### Say:
+> "A key part of the framework: we verify every citation the agent produces."
+
+### How it works:
+```
+Agent output: "MsgRetire is at x/ecocredit/base/types/v1/tx.pb.go:1399"
+                                    ↓
+Verification: Does that file exist? Does line 1399 contain MsgRetire?
+                                    ↓
+Result: verified ✓ or hallucinated ✗
 ```
 
-> "One line to install. Works in Claude Code, VS Code, Cursor, Warp, and 15+ other tools."
+### Metrics from latest run:
+| Metric | Result | Threshold |
+|--------|--------|-----------|
+| Hallucination rate | **< 5%** | 20% |
+| Citations (KOI vs baseline) | **3x more** | - |
+| Verified citations | **95%+** | - |
+
+### Say:
+> "This is how we prove KOI produces grounded answers, not hallucinations. Every citation is checked against real files and the knowledge graph."
 
 ---
 
-## SLIDE 2: Live Demo - The Value-Add (3-4 min)
+## SLIDE 5: Results - It's Working (1 min)
 
 ### Say:
-> "Let me show you what this looks like in practice. I asked Claude with KOI to create a technical brief on ecocredit retirement."
+> "We ran the full suite. Here's what we found."
 
-### Show the output files:
-1. Open `scratch/full-stack-demo/retirement_flow.md`
-2. Scroll to the **Code pointers** section
-3. Highlight a specific line like:
-   > `MsgRetire` → `x/ecocredit/base/types/v1/tx.pb.go:1399`
+### Latest CI results:
+| Test | Status |
+|------|--------|
+| Preflight (API health) | ✅ Pass |
+| Suite B (Retrieval) | ✅ Pass |
+| Suite D Delta KV-01 (Baskets A/B) | ✅ Green |
+| Suite D Delta KV-02 (Upgrades A/B) | ✅ Green |
+| Hallucination rate | ✅ < 5% |
 
-### Say:
-> "This file path and line number came from KOI's code graph - not Claude's training data. Without KOI, Claude would have to guess."
-
-### Show the contrast:
-| Without KOI | With KOI |
-|-------------|----------|
-| Guesses field names like `amount`, `recipient` | Finds actual fields: `owner`, `credits`, `jurisdiction`, `reason` |
-| Generic Cosmos advice | Regen-specific code paths |
-| No citations | 10+ verifiable file:line references |
+### Live demo result:
+> "I ran a manual test: 'Create a technical brief on ecocredit retirement with code pointers.' It produced 225 lines with 10+ verified file:line citations."
 
 ### Say:
-> "The key insight: every claim is backed by a tool result. We can verify it. That's the difference between helpful advice and grounded engineering documentation."
+> "The infrastructure is working. Now we need the team to run manual tests and find edge cases the automation misses."
 
 ---
 
-## SLIDE 3: What's Available Now (1 min)
+## SLIDE 6: How You Participate (1 min)
 
 ### Say:
-> "Here's what you can do with it today."
+> "Here's how each of you can help validate this."
 
-### Show table:
-| Capability | Tool | Try this prompt |
-|------------|------|-----------------|
-| Search docs/forum/Notion | `search` | "What is the Registry Agent?" |
-| Navigate codebase | `query_code_graph` | "Find MsgRetire implementation" |
-| On-chain queries | Ledger MCP | "What's in the community pool?" |
-| Private docs | `regen_koi_authenticate` | "Authenticate me" then ask about internal docs |
-
-### Say:
-> "The search covers forum posts, GitHub docs, Medium articles, Telegram, Discord, and if you authenticate, internal Notion."
-
----
-
-## SLIDE 4: Quality Assurance (1 min)
-
-### Say:
-> "We built automated testing to make sure this keeps working as models and code change."
-
-### Key points:
-- **Nightly:** Health checks (is the API up? do searches return correct docs?)
-- **Weekly:** Full agent scenarios (can it complete real coding tasks?)
-- **Hallucination detection:** Verifies every citation is real
-
-### Show metrics:
-| Metric | Result |
-|--------|--------|
-| KOI vs baseline citations | **3x more** |
-| Hallucination rate | **< 5%** (threshold: 20%) |
-| Repositories indexed | 8 |
-| Code entities | 31,728 |
-
-### Say:
-> "We ran A/B tests - same prompt with and without KOI. KOI produces 3x more citations with less than 5% hallucination."
-
----
-
-## SLIDE 5: Try It Yourself (1 min)
-
-### Say:
-> "I want you all to try this. Here's how to get started."
-
-### Share the quick-start:
-> "I'll drop a link in chat to `team-quick-start.md` with install instructions and sample prompts."
-
-### Three things to try:
+### For everyone:
 1. **Install:** `claude mcp add regen-koi npx regen-koi-mcp@latest`
-2. **Basic test:** "What repositories are indexed in KOI?"
-3. **Real task:** "Explain how ecocredit baskets work, with code pointers to x/ecocredit/basket"
+2. **Run one Tier 1 test** from the protocol (takes 20 min)
+3. **Report results** in Slack or the Notion page
+
+### Specific asks:
+| Person | Ask |
+|--------|-----|
+| **Marie** | Run VC-01 and CA-01, focus on code generation quality |
+| **Dave** | Test from Web2 user perspective - is the journey clear? |
+| **Becca** | Ask hardest technical questions, document what breaks |
+| **Gregory** | Already tested with Gemini CLI ✓ |
 
 ### Say:
-> "If it can tell you that `MsgPut` is at `x/ecocredit/basket/types/v1/tx.pb.go:1052`, it's working."
+> "The protocol has exact prompts and a scoring template. Just copy/paste and fill it out. I'll collect results and we'll iterate."
 
 ---
 
-## SLIDE 6: Next Steps (30 sec)
+## SLIDE 7: Next Steps (30 sec)
 
 ### Say:
-> "Here's the plan from here."
+> "Here's the plan."
 
-1. **This week:** You try it, report issues in Slack
-2. **Next week:** We address feedback
-3. **After validation:** Partner rollout
+| Timeline | Action |
+|----------|--------|
+| **This week** | Team runs manual tests, reports issues |
+| **Next week** | Address feedback, fix gaps |
+| **After validation** | Partner rollout with specific asks |
 
-### For Marie specifically:
-> "Marie, you mentioned embedding in the Regen App - that's the next phase after we validate the core functionality works well."
+### Share in chat:
+```
+Quick Start: docs/team-quick-start.md
+Test Protocol: docs/test-protocol-full-stack.md
+CI Dashboard: https://github.com/DarrenZal/koi-research/actions
+```
 
 ### Close:
 > "Questions?"
 
 ---
 
-## Backup Materials
+## Backup: FAQ
 
-### If asked "How much does this cost?"
-- KOI MCP: Free (we run the backend)
-- Ledger MCP: Free (queries public RPC)
+### "What's the difference between manual tests and automated?"
+- **Manual:** Humans discover new failure modes, test edge cases
+- **Automated:** CI catches regressions, ensures known-good scenarios don't break
+- Manual tests get "promoted" to automated once we know they're important
+
+### "How much does this cost?"
+- KOI MCP: Free to use (we run the backend)
 - Automated testing: ~$15/month (weekly LLM runs)
+- Manual testing: Uses your normal Claude Code credits
 
-### If asked "What models does it work with?"
-- Any MCP-compatible client
-- Tested with: Claude (all versions), works with Gemini CLI too (Gregory tested)
+### "What if I find a bug?"
+- Post in Slack with the prompt you used and what happened
+- Bonus: fill out the test result template from the protocol
 
-### If asked "What about private/sensitive data?"
-- Public data: Available to everyone
-- Private Notion: Requires @regen.network OAuth
-- No secrets are exposed through the tools
-
-### Architecture diagram (if needed):
-```
-┌─────────────────────────────────────────────────────────────┐
-│  AI Agent (Claude Code / Claude Desktop / Cursor / etc.)    │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ MCP (stdio)
-          ┌───────────────┴───────────────┐
-          ▼                               ▼
-┌─────────────────────┐         ┌─────────────────────┐
-│  regen-koi MCP      │         │  regen-ledger MCP   │
-│  (Knowledge + Code) │         │  (On-chain State)   │
-└─────────┬───────────┘         └─────────┬───────────┘
-          │                               │
-          ▼                               ▼
-┌─────────────────────┐         ┌─────────────────────┐
-│  KOI API Backend    │         │  Regen Ledger RPC   │
-│  48K docs, 31K code │         │  (Cosmos SDK)       │
-└─────────────────────┘         └─────────────────────┘
-```
+### "What about the Regen App embedding Marie mentioned?"
+- That's next phase, after we validate core functionality
+- Created as feature request on the repo
 
 ---
 
-## Links to Share
+## Links
 
-- **Quick Start:** `koi-research/docs/team-quick-start.md`
-- **Full User Guide:** `regen-koi-mcp/docs/USER_GUIDE.md`
-- **Test Protocol (for deeper testing):** `koi-research/docs/test-protocol-full-stack.md`
-- **GitHub:** https://github.com/gaiaaiagent/regen-koi-mcp
+| Resource | Location |
+|----------|----------|
+| **Quick Start** | `docs/team-quick-start.md` |
+| **Test Protocol** | `docs/test-protocol-full-stack.md` |
+| **Eval Framework Design** | `docs/eval-framework-design.md` |
+| **CI Dashboard** | https://github.com/DarrenZal/koi-research/actions |
+| **KOI MCP GitHub** | https://github.com/gaiaaiagent/regen-koi-mcp |
