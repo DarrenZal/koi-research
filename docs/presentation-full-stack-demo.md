@@ -166,8 +166,8 @@ Result: verified ✓ or hallucinated ✗
 
 ### Share in chat:
 ```
-Quick Start: docs/team-quick-start.md
-Test Protocol: docs/test-protocol-full-stack.md
+Full Stack Guide: https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/docs/FULL_STACK_USER_GUIDE.md
+Test Protocol: https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/test-protocol-full-stack.md
 CI Dashboard: https://github.com/DarrenZal/koi-research/actions
 ```
 
@@ -202,8 +202,8 @@ CI Dashboard: https://github.com/DarrenZal/koi-research/actions
 
 | Resource | Location |
 |----------|----------|
-| **Quick Start** | `docs/team-quick-start.md` |
-| **Test Protocol** | `docs/test-protocol-full-stack.md` |
-| **Eval Framework Design** | `docs/eval-framework-design.md` |
+| **Full Stack Guide** | [regen-koi-mcp/docs/FULL_STACK_USER_GUIDE.md](https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/docs/FULL_STACK_USER_GUIDE.md) |
+| **Test Protocol** | [koi-research/docs/test-protocol-full-stack.md](https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/test-protocol-full-stack.md) |
+| **Eval Framework Design** | [koi-research/docs/eval-framework-design.md](https://github.com/DarrenZal/koi-research/blob/regen-prod/docs/eval-framework-design.md) |
 | **CI Dashboard** | https://github.com/DarrenZal/koi-research/actions |
 | **KOI MCP GitHub** | https://github.com/gaiaaiagent/regen-koi-mcp |
