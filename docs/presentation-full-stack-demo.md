@@ -203,9 +203,15 @@ If time permits, show Claude Code with KOI MCP:
 ```bash
 # In terminal
 claude
-> What repositories are indexed in KOI?
 
-# Show the new feedback tool (full stack demo)
+# Developer scenario (tested, works well)
+> How do I create a credit class on Regen?
+# Gets: Tutorial + code + on-chain examples
+
+# Or try: "What messages can I send to the ecocredit module?"
+# Gets: All 133 message types from Ledger MCP
+
+# Show the feedback tool (full stack demo)
 > Submit feedback: rating 5, category success, notes "Demo went well!"
 ```
 
@@ -229,6 +235,13 @@ This demonstrates the full stack: MCP tool → Backend API → PostgreSQL → Co
 - **Easiest:** Use `submit_feedback` directly in Claude Code - it captures session context automatically
 - Or post in Slack with the prompt you used and what happened
 - Bonus: fill out the test result template from the protocol
+
+### "What doesn't work?"
+- Being transparent: some code graph queries return empty (keeper_for_msg, list_modules)
+- Entity type accuracy ~80% (often generic "Function" vs specific "Handler")
+- **Recommendation:** For deep code exploration, use Claude Code's native file reading
+- KOI excels at: forum search, Notion docs, on-chain state, cross-repo discovery
+- Full details in the User Guide's "Known Limitations" section
 
 ### "What about the Regen App embedding Marie mentioned?"
 - That's next phase, after we validate core functionality
