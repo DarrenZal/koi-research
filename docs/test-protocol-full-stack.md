@@ -64,7 +64,8 @@ If you only want to check “is the system healthy today?”, look at the latest
   - Read/write local repos
   - Run terminal commands
   - Use the KOI MCP tools (at minimum `search`, `query_code_graph`, `get_mcp_metrics`)
-- If you’re testing private/internal docs: authenticate with `regen_koi_authenticate` (you can just ask “can you authenticate me?”).
+- **Installation:** See the [regen-koi-mcp README](https://github.com/gaiaaiagent/regen-koi-mcp) for setup instructions (Claude Code, Cursor, VS Code, etc.)
+- If you're testing private/internal docs: authenticate with `regen_koi_authenticate` (you can just ask "can you authenticate me?").
 
 ### Recommended (for best signal)
 - Start each test in a clean git working tree (no uncommitted changes).
