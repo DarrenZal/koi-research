@@ -64,7 +64,7 @@ env:
   KOI_API_ENDPOINT: https://regen.gaiaai.xyz/api/koi
 
 permissions:
-  contents: read
+  contents: write  # Needed to push to eval-reports branch
   issues: write
 
 jobs:
@@ -517,6 +517,55 @@ jobs:
             preflight_result.json
           retention-days: 30
 
+      - name: Persist eval reports to dedicated branch
+        if: always()
+        run: |
+          set -euo pipefail
+
+          # Check if we have any reports to commit
+          if [ ! -d "reports/evals/prod" ] || [ -z "$(ls -A reports/evals/prod/*.json 2>/dev/null)" ]; then
+            echo "No eval reports to persist"
+            exit 0
+          fi
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Save reports to a temp location
+          TEMP_REPORTS=$(mktemp -d)
+          cp -r reports/evals/prod/*.json "$TEMP_REPORTS/" 2>/dev/null || true
+
+          # Try to fetch the eval-reports branch, or create orphan if it doesn't exist
+          if git fetch origin eval-reports:eval-reports 2>/dev/null; then
+            git checkout eval-reports
+          else
+            echo "Creating new eval-reports branch"
+            git checkout --orphan eval-reports
+            git rm -rf . 2>/dev/null || true
+            echo "# Eval Reports" > README.md
+            echo "" >> README.md
+            echo "This branch stores automated eval results from CI runs." >> README.md
+            echo "Reports are organized by date in the prod/ directory." >> README.md
+            mkdir -p prod
+          fi
+
+          # Copy reports and commit
+          mkdir -p prod
+          cp "$TEMP_REPORTS"/*.json prod/ 2>/dev/null || true
+          rm -rf "$TEMP_REPORTS"
+
+          git add prod/*.json README.md 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "No new reports to commit"
+          else
+            TIMESTAMP=$(date +%Y-%m-%d-%H%M)
+            git commit -m "Eval run ${TIMESTAMP} (run #${{ github.run_number }})"
+            git push origin eval-reports
+            echo "✅ Persisted eval reports to eval-reports branch"
+          fi
+
       - name: Post summary
         if: always()
         run: |
@@ -746,10 +795,22 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout koi-research
+      - name: Checkout eval-reports branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history for date filtering
+          ref: eval-reports
+          fetch-depth: 0
+
+      - name: Verify eval-reports branch
+        id: verify_branch
+        run: |
+          if [ -d "prod" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "✅ Found prod/ directory with $(ls prod/*.json 2>/dev/null | wc -l) report files"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No prod/ directory found - eval-reports branch may be empty"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -767,13 +828,14 @@ jobs:
 
       - name: Aggregate weekly eval results
         id: aggregate
+        if: steps.verify_branch.outputs.found == 'true'
         run: |
           set -euo pipefail
           shopt -s nullglob  # Make globs expand to nothing when no matches
 
           START="${{ steps.week.outputs.start_date }}"
           END="${{ steps.week.outputs.end_date }}"
-          REPORTS_DIR="reports/evals/prod"
+          REPORTS_DIR="prod"  # Reading from eval-reports branch
 
           # Initialize counters
           SUITE_B_RUNS=0
@@ -903,6 +965,26 @@ jobs:
           echo "yellow_count=${YELLOW_COUNT}" >> $GITHUB_OUTPUT
           echo "trend=${TREND}" >> $GITHUB_OUTPUT
 
+      - name: Set fallback outputs when no reports
+        id: fallback
+        if: steps.verify_branch.outputs.found != 'true'
+        run: |
+          echo "suite_b_runs=0" >> $GITHUB_OUTPUT
+          echo "suite_b_avg=N/A" >> $GITHUB_OUTPUT
+          echo "suite_b_best_rate=N/A" >> $GITHUB_OUTPUT
+          echo "suite_b_worst_rate=N/A" >> $GITHUB_OUTPUT
+          echo "suite_b_best_run=" >> $GITHUB_OUTPUT
+          echo "suite_b_worst_run=" >> $GITHUB_OUTPUT
+          echo "halluc_runs=0" >> $GITHUB_OUTPUT
+          echo "halluc_avg=N/A" >> $GITHUB_OUTPUT
+          echo "halluc_best_rate=N/A" >> $GITHUB_OUTPUT
+          echo "halluc_worst_rate=N/A" >> $GITHUB_OUTPUT
+          echo "halluc_best_run=" >> $GITHUB_OUTPUT
+          echo "halluc_worst_run=" >> $GITHUB_OUTPUT
+          echo "red_count=0" >> $GITHUB_OUTPUT
+          echo "yellow_count=0" >> $GITHUB_OUTPUT
+          echo "trend=no_data" >> $GITHUB_OUTPUT
+
       - name: Post weekly summary to dashboard issue
         uses: actions/github-script@v7
         with:
@@ -923,24 +1005,24 @@ jobs:
               dashboard = created.data;
             }
 
-            // Build summary
+            // Build summary (use aggregate outputs, fallback to fallback outputs)
             const startDate = '${{ steps.week.outputs.start_date }}';
             const endDate = '${{ steps.week.outputs.end_date }}';
-            const suiteBRuns = '${{ steps.aggregate.outputs.suite_b_runs }}';
-            const suiteBAvg = '${{ steps.aggregate.outputs.suite_b_avg }}';
-            const suiteBBest = '${{ steps.aggregate.outputs.suite_b_best_rate }}';
-            const suiteBWorst = '${{ steps.aggregate.outputs.suite_b_worst_rate }}';
-            const suiteBBestRun = '${{ steps.aggregate.outputs.suite_b_best_run }}';
-            const suiteBWorstRun = '${{ steps.aggregate.outputs.suite_b_worst_run }}';
-            const hallucRuns = '${{ steps.aggregate.outputs.halluc_runs }}';
-            const hallucAvg = '${{ steps.aggregate.outputs.halluc_avg }}';
-            const hallucBest = '${{ steps.aggregate.outputs.halluc_best_rate }}';
-            const hallucWorst = '${{ steps.aggregate.outputs.halluc_worst_rate }}';
-            const hallucBestRun = '${{ steps.aggregate.outputs.halluc_best_run }}';
-            const hallucWorstRun = '${{ steps.aggregate.outputs.halluc_worst_run }}';
-            const redCount = '${{ steps.aggregate.outputs.red_count }}';
-            const yellowCount = '${{ steps.aggregate.outputs.yellow_count }}';
-            const trend = '${{ steps.aggregate.outputs.trend }}';
+            const suiteBRuns = '${{ steps.aggregate.outputs.suite_b_runs || steps.fallback.outputs.suite_b_runs || '0' }}';
+            const suiteBAvg = '${{ steps.aggregate.outputs.suite_b_avg || steps.fallback.outputs.suite_b_avg || 'N/A' }}';
+            const suiteBBest = '${{ steps.aggregate.outputs.suite_b_best_rate || steps.fallback.outputs.suite_b_best_rate || 'N/A' }}';
+            const suiteBWorst = '${{ steps.aggregate.outputs.suite_b_worst_rate || steps.fallback.outputs.suite_b_worst_rate || 'N/A' }}';
+            const suiteBBestRun = '${{ steps.aggregate.outputs.suite_b_best_run || steps.fallback.outputs.suite_b_best_run || '' }}';
+            const suiteBWorstRun = '${{ steps.aggregate.outputs.suite_b_worst_run || steps.fallback.outputs.suite_b_worst_run || '' }}';
+            const hallucRuns = '${{ steps.aggregate.outputs.halluc_runs || steps.fallback.outputs.halluc_runs || '0' }}';
+            const hallucAvg = '${{ steps.aggregate.outputs.halluc_avg || steps.fallback.outputs.halluc_avg || 'N/A' }}';
+            const hallucBest = '${{ steps.aggregate.outputs.halluc_best_rate || steps.fallback.outputs.halluc_best_rate || 'N/A' }}';
+            const hallucWorst = '${{ steps.aggregate.outputs.halluc_worst_rate || steps.fallback.outputs.halluc_worst_rate || 'N/A' }}';
+            const hallucBestRun = '${{ steps.aggregate.outputs.halluc_best_run || steps.fallback.outputs.halluc_best_run || '' }}';
+            const hallucWorstRun = '${{ steps.aggregate.outputs.halluc_worst_run || steps.fallback.outputs.halluc_worst_run || '' }}';
+            const redCount = '${{ steps.aggregate.outputs.red_count || steps.fallback.outputs.red_count || '0' }}';
+            const yellowCount = '${{ steps.aggregate.outputs.yellow_count || steps.fallback.outputs.yellow_count || '0' }}';
+            const trend = '${{ steps.aggregate.outputs.trend || steps.fallback.outputs.trend || 'no_data' }}';
 
             const trendEmoji = trend === 'improving' ? '📈' : trend === 'declining' ? '📉' : '➡️';
 
@@ -992,16 +1074,16 @@ jobs:
           echo "## 📊 Weekly Eval Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Week:** ${{ steps.week.outputs.start_date }} to ${{ steps.week.outputs.end_date }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Trend:** ${{ steps.aggregate.outputs.trend }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trend:** ${{ steps.aggregate.outputs.trend || steps.fallback.outputs.trend || 'no_data' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Suite B (Retrieval)" >> $GITHUB_STEP_SUMMARY
-          echo "- Runs: ${{ steps.aggregate.outputs.suite_b_runs }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Avg pass rate: ${{ steps.aggregate.outputs.suite_b_avg }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Runs: ${{ steps.aggregate.outputs.suite_b_runs || steps.fallback.outputs.suite_b_runs || '0' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Avg pass rate: ${{ steps.aggregate.outputs.suite_b_avg || steps.fallback.outputs.suite_b_avg || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Hallucination" >> $GITHUB_STEP_SUMMARY
-          echo "- Runs: ${{ steps.aggregate.outputs.halluc_runs }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Avg rate: ${{ steps.aggregate.outputs.halluc_avg }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Runs: ${{ steps.aggregate.outputs.halluc_runs || steps.fallback.outputs.halluc_runs || '0' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Avg rate: ${{ steps.aggregate.outputs.halluc_avg || steps.fallback.outputs.halluc_avg || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Alerts" >> $GITHUB_STEP_SUMMARY
-          echo "- Red: ${{ steps.aggregate.outputs.red_count }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Yellow: ${{ steps.aggregate.outputs.yellow_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Red: ${{ steps.aggregate.outputs.red_count || steps.fallback.outputs.red_count || '0' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Yellow: ${{ steps.aggregate.outputs.yellow_count || steps.fallback.outputs.yellow_count || '0' }}" >> $GITHUB_STEP_SUMMARY
