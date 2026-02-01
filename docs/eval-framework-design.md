@@ -509,8 +509,71 @@ Recommended workflow integration:
 ## Phase 3 — Alerts + baseline tracking
 - [x] Baseline comparison for hallucination rate trends (`scripts/compare_hallucination_baseline.py`)
 - [x] GitHub dashboard issue comment on red/yellow regressions (`actions/github-script`)
-- [ ] Weekly summary comment to tracking issue (green runs too, not only regressions)
+- [x] Weekly summary aggregation from persistent `eval-reports` branch
 - [ ] Baseline tracking for Suite D Delta (trend KOI value-add deltas over time)
+
+---
+
+# Report Persistence Architecture
+
+> **Status:** Implemented in `.github/workflows/full-stack-tests.yml`
+
+Eval reports are persisted to a dedicated `eval-reports` branch to enable cross-run aggregation (e.g., weekly summaries). This keeps generated data separate from the main codebase.
+
+## Data flow
+
+```
+Daily run (2am UTC) on regen-prod branch:
+  └── Generates reports → reports/evals/prod/*.json
+  └── Uploads artifacts (30-day retention)
+  └── Commits JSON reports to eval-reports branch → prod/*.json
+
+Weekly summary (Sunday 6am UTC):
+  └── Checks out eval-reports branch
+  └── Reads prod/*.json files from the past 7 days
+  └── Aggregates: pass rates, hallucination rates, alerts
+  └── Posts summary to KOI Eval Dashboard issue
+```
+
+## Directory structure
+
+**On `regen-prod` branch (code):**
+```
+reports/
+├── baselines/prod/          # Committed baselines for comparison
+│   ├── suite_b.json
+│   └── hallucination.json
+└── evals/                   # gitignored - generated during CI only
+```
+
+**On `eval-reports` branch (data):**
+```
+prod/
+├── 2026-01-25-0200_suite_b.json
+├── 2026-01-25-0200_hallucination_diff.json
+├── 2026-01-26-0200_suite_b.json
+└── ...
+README.md
+```
+
+## Why a separate branch?
+
+1. **Clean separation** — Generated eval data doesn't pollute the code history
+2. **Unlimited retention** — Unlike artifacts (90 days max), git branches persist indefinitely
+3. **Easy access** — Weekly summary job can `git checkout eval-reports` without complex artifact downloads
+4. **GitHub Pages ready** — Can add visualizations/dashboards served from this branch
+
+## Refreshing or clearing old reports
+
+To clear old reports (e.g., after major eval changes):
+```bash
+git checkout eval-reports
+rm prod/*.json
+git commit -m "Clear old reports for baseline reset"
+git push origin eval-reports
+```
+
+Reports older than a certain date can be selectively removed if the branch grows too large.
 
 ---
 
