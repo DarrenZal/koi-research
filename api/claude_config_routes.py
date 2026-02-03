@@ -25,8 +25,13 @@ import json
 import hashlib
 import hmac
 import subprocess
+import urllib.parse
+import asyncpg
 from datetime import datetime
 from contextlib import asynccontextmanager
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Router setup
 config_router = APIRouter(prefix="/api/koi/claude-config", tags=["claude-config"])
@@ -107,21 +112,34 @@ API_PATH_TO_FILE = {
 
 
 # =============================================================================
-# Database dependency - replace with your actual DB setup
+# Database dependency
 # =============================================================================
+
+# Database configuration from environment
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", "5433"))
+DB_NAME = os.getenv("DB_NAME", "eliza")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+
 
 async def get_db():
     """
     Database connection dependency.
 
-    Replace this with your actual database connection pool.
-    Expected to return an asyncpg connection or similar.
+    Creates a connection per-request (matching pipeline_metadata_api.py pattern).
     """
-    # Placeholder - integrate with your existing DB pool
-    # Example with asyncpg:
-    # async with db_pool.acquire() as conn:
-    #     yield conn
-    raise NotImplementedError("Replace with actual database connection")
+    conn = await asyncpg.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
+    try:
+        yield conn
+    finally:
+        await conn.close()
 
 
 # =============================================================================
@@ -142,19 +160,37 @@ def load_file(relative_path: str) -> Optional[str]:
     """Load file from config directory. Path must be in allowlist."""
     if relative_path not in FILE_ALLOWLIST:
         return None
-    full_path = os.path.join(CONFIG_DIR, relative_path)
-    if not os.path.exists(full_path):
+
+    # Normalize and resolve the path
+    full_path = os.path.normpath(os.path.join(CONFIG_DIR, relative_path))
+
+    # CRITICAL: Ensure resolved path is within CONFIG_DIR (prevent path traversal)
+    config_dir_abs = os.path.abspath(CONFIG_DIR)
+    if not full_path.startswith(config_dir_abs + os.sep):
+        logger.warning(f"Path traversal attempt blocked: {relative_path}")
         return None
-    with open(full_path, 'r') as f:
-        return f.read()
+
+    # Use try/except instead of exists() check to avoid TOCTOU race
+    try:
+        with open(full_path, 'r') as f:
+            return f.read()
+    except (FileNotFoundError, IOError, PermissionError):
+        return None
 
 
 def get_file_mtime(relative_path: str) -> Optional[datetime]:
     """Get file modification time."""
-    full_path = os.path.join(CONFIG_DIR, relative_path)
-    if not os.path.exists(full_path):
+    full_path = os.path.normpath(os.path.join(CONFIG_DIR, relative_path))
+
+    # Ensure path is within CONFIG_DIR
+    config_dir_abs = os.path.abspath(CONFIG_DIR)
+    if not full_path.startswith(config_dir_abs + os.sep):
         return None
-    return datetime.fromtimestamp(os.path.getmtime(full_path))
+
+    try:
+        return datetime.fromtimestamp(os.path.getmtime(full_path))
+    except (FileNotFoundError, OSError):
+        return None
 
 
 def load_merged_claude_md(tier: str) -> str:
@@ -211,13 +247,15 @@ async def get_user_tier(
 
     email = row["user_email"]
 
-    # Phase 1: Simple tier determination based on email domain
+    # Phase 1: Only public and core tiers supported.
+    # Partner tier requires OAuth allowlist changes (Phase 2).
+    # Authenticated non-@regen.network users get public tier.
     if email and email.endswith("@regen.network"):
         tier = "core"
     else:
         tier = "public"
 
-    # Phase 2: Add org lookup for partner tier
+    # Phase 2: Add org lookup for partner tier (requires auth changes)
     # org_rows = await db.fetch(
     #     "SELECT org_slug FROM user_orgs WHERE user_email = $1", email
     # )
@@ -529,6 +567,10 @@ async def sync_from_github(
     if not GITHUB_WEBHOOK_SECRET:
         raise HTTPException(status_code=500, detail="Webhook secret not configured")
 
+    # Validate signature header exists before comparing
+    if not x_hub_signature_256:
+        raise HTTPException(status_code=401, detail="Missing signature header")
+
     body = await request.body()
     expected_sig = "sha256=" + hmac.new(
         GITHUB_WEBHOOK_SECRET.encode(),
@@ -536,7 +578,7 @@ async def sync_from_github(
         hashlib.sha256
     ).hexdigest()
 
-    if not hmac.compare_digest(expected_sig, x_hub_signature_256 or ""):
+    if not hmac.compare_digest(expected_sig, x_hub_signature_256):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     payload = json.loads(body)
@@ -592,8 +634,12 @@ async def get_file_endpoint(
     """Get individual config file. Only allowlisted files are served."""
     tier, email, orgs = auth
 
-    # Security: prevent directory traversal
-    if ".." in file_path:
+    # Security: decode URL encoding and validate path
+    file_path = urllib.parse.unquote(file_path)
+
+    # Check for null bytes, path traversal, and absolute paths
+    if '\0' in file_path or ".." in file_path or file_path.startswith("/"):
+        logger.warning(f"Invalid path attempt: {file_path!r}")
         raise HTTPException(status_code=400, detail="Invalid path")
 
     # Special case: CLAUDE.md returns merged version
