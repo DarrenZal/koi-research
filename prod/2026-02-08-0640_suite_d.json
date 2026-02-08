@@ -1,0 +1,293 @@
+{
+  "suite": "suite_d",
+  "env": "prod",
+  "generated_at": "2026-02-08T06:40:28.458836+00:00",
+  "run_id": "20260208-064028-7pufer",
+  "model": "sonnet",
+  "koi_api_endpoint": "https://regen.gaiaai.xyz/api/koi",
+  "scenarios": [
+    {
+      "id": "sd_vc_01",
+      "name": "VC-01 (Suite D): Python CLI + unittest",
+      "run_id": "20260208-064028-7pufer-sd_vc_01",
+      "passed": false,
+      "duration_ms": 72008,
+      "failures": [
+        "missing path: scratch/suite-d/20260208-064028-7pufer-sd_vc_01/vc-01/",
+        "glob has no matches: scratch/suite-d/20260208-064028-7pufer-sd_vc_01/vc-01/*.py",
+        "glob has no matches: scratch/suite-d/20260208-064028-7pufer-sd_vc_01/vc-01/test_*.py",
+        "missing expected bash command (e.g., unittest run)"
+      ],
+      "tool_calls": [
+        "Write",
+        "Write",
+        "Write",
+        "Bash",
+        "Bash",
+        "Write"
+      ],
+      "tool_error_count": 0,
+      "assistant_text": "I'll create a self-contained Python CLI tool for analyzing ecocredit batches. Let me build this step by step.Now let me run the tests and capture the output:Perfect! Now let me also demonstrate the CLI tool in action:Excellent! Let me also create a quick README for completeness:Perfect! Let me create a summary document showing everything:\n\n## \u2705 Deliverable Complete\n\nI've created a self-contained Python CLI tool in `/tmp/scratch/suite-d/20260208-064028-7pufer-sd_vc_01/vc-01/` with the following components:\n\n### \ud83d\udcc1 Files Created\n\n1. **`batch_analyzer.py`** - Main CLI tool (85 lines)\n   - Loads JSON batch data\n   - Calculates total tradable and retired amounts\n   - Aggregates batches by project ID\n   - Identifies top 3 projects by retired amount\n   - Formatted output with proper error handling\n\n2. **`test_batch_analyzer.py`** - Comprehensive unit tests (220 lines)\n   - 13 test cases covering all functionality\n   - Tests for normal operations, edge cases, and error conditions\n   - Uses only Python's built-in `unittest` framework\n\n3. **`sample_batches.json`** - Example dataset\n   - 6 batches from 5 different projects\n   - Includes multiple batches from same project (C01-001) to test aggregation\n\n4. **`README.md`** - Documentation\n\n### \ud83e\uddea Test Results\n\n```\ntest_analyze_batches_empty_list ... ok\ntest_analyze_batches_project_aggregation ... ok\ntest_analyze_batches_single_batch ... ok\ntest_analyze_batches_top_projects ... ok\ntest_analyze_batches_totals ... ok\ntest_format_output_structure ... ok\ntest_format_output_with_fewer_than_three_projects ... ok\ntest_load_batches_file_not_found ... ok\ntest_load_batches_invalid_json ... ok\ntest_load_batches_valid_file ... ok\ntest_analyze_batches_same_retired_amounts ... ok\ntest_analyze_batches_with_large_numbers ... ok\ntest_analyze_batches_with_zero_amounts ... ok\n\n----------------------------------------------------------------------\nRan 13 tests in 0.002s\n\nOK\n```\n\n### \ud83c\udfaf CLI Tool Output\n\n```\n============================================================\nECOCREDIT BATCH ANALYSIS\n============================================================\n\nTotal Tradable Amount: 8,800.00\nTotal Retired Amount:  5,150.00\n\nTop 3 Projects by Retired Amount:\n------------------------------------------------------------\n  1. C01-003: 2,000.00\n  2. C01-002: 1,500.00\n  3. C01-001: 1,250.00\n============================================================\n```\n\n### \u2728 Key Features\n\n- \u2705 Zero external dependencies (only Python stdlib)\n- \u2705 Proper error handling (file not found, invalid JSON, missing fields)\n- \u2705 Project aggregation (multiple batches from same project are summed)\n- \u2705 Comprehensive test coverage\n- \u2705 Clean, documented code\n- \u2705 Professional formatted output\n\nThe tool is minimal, correct, and ready to use!",
+      "stderr": [],
+      "result": {
+        "subtype": "success",
+        "duration_ms": 70325,
+        "duration_api_ms": 81363,
+        "is_error": false,
+        "num_turns": 7,
+        "session_id": "22c035f5-5048-4816-9c79-0453f4dfd44b",
+        "total_cost_usd": 0.2220898,
+        "usage": {
+          "input_tokens": 27,
+          "cache_creation_input_tokens": 8529,
+          "cache_read_input_tokens": 88381,
+          "output_tokens": 5899,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 8529
+          }
+        },
+        "result": "Perfect! Let me create a summary document showing everything:\n\n## \u2705 Deliverable Complete\n\nI've created a self-contained Python CLI tool in `/tmp/scratch/suite-d/20260208-064028-7pufer-sd_vc_01/vc-01/` with the following components:\n\n### \ud83d\udcc1 Files Created\n\n1. **`batch_analyzer.py`** - Main CLI tool (85 lines)\n   - Loads JSON batch data\n   - Calculates total tradable and retired amounts\n   - Aggregates batches by project ID\n   - Identifies top 3 projects by retired amount\n   - Formatted output with proper error handling\n\n2. **`test_batch_analyzer.py`** - Comprehensive unit tests (220 lines)\n   - 13 test cases covering all functionality\n   - Tests for normal operations, edge cases, and error conditions\n   - Uses only Python's built-in `unittest` framework\n\n3. **`sample_batches.json`** - Example dataset\n   - 6 batches from 5 different projects\n   - Includes multiple batches from same project (C01-001) to test aggregation\n\n4. **`README.md`** - Documentation\n\n### \ud83e\uddea Test Results\n\n```\ntest_analyze_batches_empty_list ... ok\ntest_analyze_batches_project_aggregation ... ok\ntest_analyze_batches_single_batch ... ok\ntest_analyze_batches_top_projects ... ok\ntest_analyze_batches_totals ... ok\ntest_format_output_structure ... ok\ntest_format_output_with_fewer_than_three_projects ... ok\ntest_load_batches_file_not_found ... ok\ntest_load_batches_invalid_json ... ok\ntest_load_batches_valid_file ... ok\ntest_analyze_batches_same_retired_amounts ... ok\ntest_analyze_batches_with_large_numbers ... ok\ntest_analyze_batches_with_zero_amounts ... ok\n\n----------------------------------------------------------------------\nRan 13 tests in 0.002s\n\nOK\n```\n\n### \ud83c\udfaf CLI Tool Output\n\n```\n============================================================\nECOCREDIT BATCH ANALYSIS\n============================================================\n\nTotal Tradable Amount: 8,800.00\nTotal Retired Amount:  5,150.00\n\nTop 3 Projects by Retired Amount:\n------------------------------------------------------------\n  1. C01-003: 2,000.00\n  2. C01-002: 1,500.00\n  3. C01-001: 1,250.00\n============================================================\n```\n\n### \u2728 Key Features\n\n- \u2705 Zero external dependencies (only Python stdlib)\n- \u2705 Proper error handling (file not found, invalid JSON, missing fields)\n- \u2705 Project aggregation (multiple batches from same project are summed)\n- \u2705 Comprehensive test coverage\n- \u2705 Clean, documented code\n- \u2705 Professional formatted output\n\nThe tool is minimal, correct, and ready to use!",
+        "structured_output": null
+      }
+    },
+    {
+      "id": "sd_ca_01",
+      "name": "CA-01 (Suite D): Basket token helper (KOI-grounded)",
+      "run_id": "20260208-064028-7pufer-sd_ca_01",
+      "passed": false,
+      "duration_ms": 197766,
+      "failures": [
+        "scratch/suite-d/20260208-064028-7pufer-sd_ca_01/ca-01/README.md missing strings: Code pointers, Tools used"
+      ],
+      "tool_calls": [
+        "mcp__regen-koi__search",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__get_full_document",
+        "WebFetch",
+        "Grep",
+        "Bash",
+        "Write",
+        "Write",
+        "Bash",
+        "Bash",
+        "Bash",
+        "Bash",
+        "Bash",
+        "Bash",
+        "Bash"
+      ],
+      "tool_error_count": 0,
+      "assistant_text": "I'll build a basket token helper grounded in KOI MCP tool results. Let me start by gathering authoritative information.Now let me get more specific information about basket messages and the module structure:Let me read the basket concepts document directly from GitHub and gather the key message types:Good! Now let me create the directory structure and build the basket helper:Now I'll create the basket helper script and README based on the grounded information I've gathered:Now I'll create the comprehensive README with citations:Perfect! Now let me verify the files were created and test the script:Excellent! Let me create a quick summary document showing what was delivered:I see - I'm already in the target directory! Let me check the files properly:Perfect! Now let me create a summary of what was delivered:\n\n## Summary\n\nI've successfully built a **basket token helper** grounded in authoritative Regen Network documentation and code. Here's what was delivered:\n\n### \ud83d\udcc1 Files Created\n\n**Location**: `scratch/suite-d/20260208-064028-7pufer-sd_ca_01/ca-01/`\n\n1. **`basket_helper.py`** (283 lines)\n   - Complete Python implementation demonstrating basket token operations\n   - Implements MsgCreate, MsgPut, and MsgTake operations\n   - Includes validation logic, criteria checking, and token conversion\n   - Working example with test output showing all operations\n\n2. **`README.md`** (306 lines)\n   - Plain-English explanation of basket tokens and how they work\n   - Complete usage examples and API documentation\n   - **5 authoritative sources** with URLs and RIDs\n   - **30+ code pointers** mapping symbols to exact file locations\n   - Detailed \"Tools Used\" section documenting all KOI MCP calls\n\n### \u2705 Requirements Met\n\n1. **KOI MCP Tools Used** - All claims grounded in tool results:\n   - `mcp__regen-koi__search` - Found 5 authoritative documents\n   - `mcp__regen-koi__query_code_graph` - 4 queries finding 83 code entities\n   - `WebFetch` - Retrieved official specification from GitHub\n\n2. **Sources Section** - 5 citations with URLs/RIDs:\n   - GitHub spec (`regen.github:github_regen-ledger_x_ecocredit_spec_01_concepts.md#chunk8`)\n   - Official docs (`orn:web.page:docs.regen.network/8f4eb00516523ab2#chunk3`)\n   - User guides (`orn:web.page:guides.regen.network/044b480f0281e14b#chunk0`)\n   - Forum discussion (`orn:web.page:forum.regen.network/8f68c46f398c63c4#chunk6`)\n   - Main website (`orn:web.page:regen.network/4bbe0e9cd7acffb5#chunk12`)\n\n3. **Code Pointers Section** - 30+ symbols mapped to files:\n   - Message types (MsgCreate, MsgPut, MsgTake) \u2192 `x/ecocredit/basket/types/v1/tx.pb.go`\n   - Handlers (SimulateMsgCreate, SimulateMsgPut, SimulateMsgTake) \u2192 `x/ecocredit/basket/simulation/`\n   - Business logic (canBasketAcceptCredit, creditAmountToBasketCoin) \u2192 `x/ecocredit/basket/keeper/`\n   - Query types, state management, CLI commands, fees, and test suites\n\n4. **Tools Used Section** - Complete documentation of:\n   - 4 different tool invocations with queries, purposes, and result counts\n   - Total: 1 search query, 4 code graph queries, 1 WebFetch\n\n### \ud83c\udfaf Key Features\n\n- **Working Python script** that runs successfully and demonstrates all operations\n- **No guesswork** - every claim supported by tool results\n- **Explicit about limitations** - clearly states what the helper cannot do (connect to real nodes, sign transactions, etc.)\n- **Educational focus** - designed to help understand basket token mechanics\n\nThe deliverable is ready for use as a learning tool and reference guide for Regen Network basket tokens! \ud83c\udf31",
+      "stderr": [],
+      "result": {
+        "subtype": "success",
+        "duration_ms": 191106,
+        "duration_api_ms": 201050,
+        "is_error": false,
+        "num_turns": 20,
+        "session_id": "c68de05d-57fa-43d2-a263-1e6007732dc3",
+        "total_cost_usd": 0.66395815,
+        "usage": {
+          "input_tokens": 151,
+          "cache_creation_input_tokens": 60337,
+          "cache_read_input_tokens": 774421,
+          "output_tokens": 9948,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 60337
+          }
+        },
+        "result": "Perfect! Now let me create a summary of what was delivered:\n\n## Summary\n\nI've successfully built a **basket token helper** grounded in authoritative Regen Network documentation and code. Here's what was delivered:\n\n### \ud83d\udcc1 Files Created\n\n**Location**: `scratch/suite-d/20260208-064028-7pufer-sd_ca_01/ca-01/`\n\n1. **`basket_helper.py`** (283 lines)\n   - Complete Python implementation demonstrating basket token operations\n   - Implements MsgCreate, MsgPut, and MsgTake operations\n   - Includes validation logic, criteria checking, and token conversion\n   - Working example with test output showing all operations\n\n2. **`README.md`** (306 lines)\n   - Plain-English explanation of basket tokens and how they work\n   - Complete usage examples and API documentation\n   - **5 authoritative sources** with URLs and RIDs\n   - **30+ code pointers** mapping symbols to exact file locations\n   - Detailed \"Tools Used\" section documenting all KOI MCP calls\n\n### \u2705 Requirements Met\n\n1. **KOI MCP Tools Used** - All claims grounded in tool results:\n   - `mcp__regen-koi__search` - Found 5 authoritative documents\n   - `mcp__regen-koi__query_code_graph` - 4 queries finding 83 code entities\n   - `WebFetch` - Retrieved official specification from GitHub\n\n2. **Sources Section** - 5 citations with URLs/RIDs:\n   - GitHub spec (`regen.github:github_regen-ledger_x_ecocredit_spec_01_concepts.md#chunk8`)\n   - Official docs (`orn:web.page:docs.regen.network/8f4eb00516523ab2#chunk3`)\n   - User guides (`orn:web.page:guides.regen.network/044b480f0281e14b#chunk0`)\n   - Forum discussion (`orn:web.page:forum.regen.network/8f68c46f398c63c4#chunk6`)\n   - Main website (`orn:web.page:regen.network/4bbe0e9cd7acffb5#chunk12`)\n\n3. **Code Pointers Section** - 30+ symbols mapped to files:\n   - Message types (MsgCreate, MsgPut, MsgTake) \u2192 `x/ecocredit/basket/types/v1/tx.pb.go`\n   - Handlers (SimulateMsgCreate, SimulateMsgPut, SimulateMsgTake) \u2192 `x/ecocredit/basket/simulation/`\n   - Business logic (canBasketAcceptCredit, creditAmountToBasketCoin) \u2192 `x/ecocredit/basket/keeper/`\n   - Query types, state management, CLI commands, fees, and test suites\n\n4. **Tools Used Section** - Complete documentation of:\n   - 4 different tool invocations with queries, purposes, and result counts\n   - Total: 1 search query, 4 code graph queries, 1 WebFetch\n\n### \ud83c\udfaf Key Features\n\n- **Working Python script** that runs successfully and demonstrates all operations\n- **No guesswork** - every claim supported by tool results\n- **Explicit about limitations** - clearly states what the helper cannot do (connect to real nodes, sign transactions, etc.)\n- **Educational focus** - designed to help understand basket token mechanics\n\nThe deliverable is ready for use as a learning tool and reference guide for Regen Network basket tokens! \ud83c\udf31",
+        "structured_output": null
+      }
+    },
+    {
+      "id": "sd_nu_02",
+      "name": "NU-02 (Suite D): Upgrade Planning from Docs",
+      "run_id": "20260208-064028-7pufer-sd_nu_02",
+      "passed": false,
+      "duration_ms": 139790,
+      "failures": [
+        "missing path: scratch/suite-d/20260208-064028-7pufer-sd_nu_02/nu-02/upgrade_plan.md",
+        "missing file: scratch/suite-d/20260208-064028-7pufer-sd_nu_02/nu-02/upgrade_plan.md"
+      ],
+      "tool_calls": [
+        "mcp__regen-koi__search",
+        "mcp__regen-koi__search",
+        "mcp__regen-koi__search_github_docs",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__get_full_document",
+        "mcp__regen-koi__get_full_document",
+        "mcp__regen-koi__get_full_document",
+        "Read",
+        "Read",
+        "Glob",
+        "Read",
+        "Read",
+        "Glob",
+        "Read",
+        "Read",
+        "Read",
+        "Read",
+        "Read",
+        "Bash",
+        "Write"
+      ],
+      "tool_error_count": 0,
+      "assistant_text": "I'll help you create a comprehensive upgrade plan document by researching the regen-ledger codebase using KOI tools. Let me start by gathering information.Now let me search for more specific upgrade documentation and get full documents to review:Let me search for more specific information about upgrade handlers and read the code directly:Now let me read a couple more upgrade examples to get a complete picture:Perfect! Now I have enough information to create the comprehensive upgrade plan document. Let me create it:Perfect! I've successfully created a comprehensive upgrade plan document at `scratch/suite-d/20260208-064028-7pufer-sd_nu_02/nu-02/upgrade_plan.md`.\n\n## Summary\n\nI've researched and created a detailed upgrade plan document based on the regen-ledger codebase using KOI tools. Here's what was included:\n\n### Research Conducted:\n1. **KOI Search**: Found 15+ upgrade documentation files including historical upgrade guides (v3.0-v7.0)\n2. **KOI Code Graph**: Identified 16 upgrade-related entities and 30 handler implementations\n3. **GitHub Docs Search**: Located 13 relevant code and documentation files\n4. **Local File Analysis**: Read actual upgrade handlers, type definitions, and validator guides\n\n### Document Sections:\n- **Upgrade Name**: Naming convention (`v{MAJOR}_{MINOR}` format with examples)\n- **Height**: Block height calculation methodology with historical examples\n- **Handler Location**: Complete file paths with line numbers from code graph queries\n- **Migration Steps**: 5-phase migration process based on actual upgrade patterns\n- **Validator Instructions**: Detailed Cosmovisor and manual upgrade procedures\n- **Sources**: Comprehensive list of all KOI queries, search results, and file reads\n\n### Key Findings:\n- All upgrades follow the `Upgrade` struct pattern defined in `app/upgrades/types.go`\n- Handlers are in versioned directories: `app/upgrades/v{X}_{Y}/upgrade.go`\n- Registration occurs in `app/upgrades.go` and `app/app.go` (lines 1108, 1126)\n- In-place store migrations are standard (no genesis export/import)\n- Testnet upgrades always precede mainnet deployments\n\nThe document is **grounded entirely in actual sources** - no information was invented. Missing information is explicitly documented in a dedicated section.",
+      "stderr": [],
+      "result": {
+        "subtype": "success",
+        "duration_ms": 136670,
+        "duration_api_ms": 141264,
+        "is_error": false,
+        "num_turns": 22,
+        "session_id": "1e21a4c7-844a-484c-be0f-2225d4b56fef",
+        "total_cost_usd": 0.43620245,
+        "usage": {
+          "input_tokens": 47,
+          "cache_creation_input_tokens": 52237,
+          "cache_read_input_tokens": 418732,
+          "output_tokens": 6881,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 52237
+          }
+        },
+        "result": "Perfect! I've successfully created a comprehensive upgrade plan document at `scratch/suite-d/20260208-064028-7pufer-sd_nu_02/nu-02/upgrade_plan.md`.\n\n## Summary\n\nI've researched and created a detailed upgrade plan document based on the regen-ledger codebase using KOI tools. Here's what was included:\n\n### Research Conducted:\n1. **KOI Search**: Found 15+ upgrade documentation files including historical upgrade guides (v3.0-v7.0)\n2. **KOI Code Graph**: Identified 16 upgrade-related entities and 30 handler implementations\n3. **GitHub Docs Search**: Located 13 relevant code and documentation files\n4. **Local File Analysis**: Read actual upgrade handlers, type definitions, and validator guides\n\n### Document Sections:\n- **Upgrade Name**: Naming convention (`v{MAJOR}_{MINOR}` format with examples)\n- **Height**: Block height calculation methodology with historical examples\n- **Handler Location**: Complete file paths with line numbers from code graph queries\n- **Migration Steps**: 5-phase migration process based on actual upgrade patterns\n- **Validator Instructions**: Detailed Cosmovisor and manual upgrade procedures\n- **Sources**: Comprehensive list of all KOI queries, search results, and file reads\n\n### Key Findings:\n- All upgrades follow the `Upgrade` struct pattern defined in `app/upgrades/types.go`\n- Handlers are in versioned directories: `app/upgrades/v{X}_{Y}/upgrade.go`\n- Registration occurs in `app/upgrades.go` and `app/app.go` (lines 1108, 1126)\n- In-place store migrations are standard (no genesis export/import)\n- Testnet upgrades always precede mainnet deployments\n\nThe document is **grounded entirely in actual sources** - no information was invented. Missing information is explicitly documented in a dedicated section.",
+        "structured_output": null
+      }
+    },
+    {
+      "id": "sd_vc_02",
+      "name": "VC-02 (Suite D): query_code_graph contract sanity",
+      "run_id": "20260208-064028-7pufer-sd_vc_02",
+      "passed": false,
+      "duration_ms": 69833,
+      "failures": [
+        "missing path: scratch/suite-d/20260208-064028-7pufer-sd_vc_02/vc-02/contract_sanity_report.md",
+        "missing file: scratch/suite-d/20260208-064028-7pufer-sd_vc_02/vc-02/contract_sanity_report.md"
+      ],
+      "tool_calls": [
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__query_code_graph",
+        "mcp__regen-koi__query_code_graph",
+        "Bash",
+        "Write"
+      ],
+      "tool_error_count": 0,
+      "assistant_text": "I'll perform this contract sanity check to detect schema drift between the MCP tool schema and the backend API.Now let me try the third test with an invalid query_type:Perfect! Now let me create the directory structure and write the contract sanity report:Perfect! I've completed the contract sanity check. Here's a summary of my findings:\n\n## Summary\n\n\u2705 **All tests passed successfully** - No schema drift detected!\n\n### Test Results:\n\n1. **Test 1 (list_repos)**: \u2705 Succeeded - Returned 8 repositories with entity counts\n2. **Test 2 (find_call_graph)**: \u2705 Succeeded - Returned 14 function relationships for \"CreateBatch\" entity\n3. **Test 3 (list_keepers - invalid)**: \u2705 Correctly rejected by MCP tool enum validation\n\n### Key Findings:\n\n- The MCP tool enum contains 19 valid query_types\n- Client-side validation is working correctly, preventing invalid API calls\n- The backend API accepts all tested valid query_types\n- No evidence of query_types accepted by backend but missing from MCP enum\n- No evidence of query_types in MCP enum that are rejected by backend\n\n### Report Contents:\n\nThe detailed report at `scratch/suite-d/20260208-064028-7pufer-sd_vc_02/vc-02/contract_sanity_report.md` includes:\n\n- Full test results with actual API responses\n- Schema drift analysis\n- 5 concrete automated contract test recommendations:\n  1. Enum completeness test\n  2. Smoke test for all valid query_types\n  3. Invalid query_type rejection test\n  4. Backend schema snapshot test\n  5. Integration test with backend\n- CI/CD integration recommendations\n- Documentation requirements for future changes\n\nThe contract is currently healthy with strong alignment between the MCP tool schema and backend API! \ud83c\udf89",
+      "stderr": [],
+      "result": {
+        "subtype": "success",
+        "duration_ms": 66523,
+        "duration_api_ms": 70700,
+        "is_error": false,
+        "num_turns": 6,
+        "session_id": "b49ac06f-cbb0-4c5c-a168-00b8144ecc3d",
+        "total_cost_usd": 0.11715690000000001,
+        "usage": {
+          "input_tokens": 29,
+          "cache_creation_input_tokens": 5350,
+          "cache_read_input_tokens": 115261,
+          "output_tokens": 3362,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 5350
+          }
+        },
+        "result": "Perfect! I've completed the contract sanity check. Here's a summary of my findings:\n\n## Summary\n\n\u2705 **All tests passed successfully** - No schema drift detected!\n\n### Test Results:\n\n1. **Test 1 (list_repos)**: \u2705 Succeeded - Returned 8 repositories with entity counts\n2. **Test 2 (find_call_graph)**: \u2705 Succeeded - Returned 14 function relationships for \"CreateBatch\" entity\n3. **Test 3 (list_keepers - invalid)**: \u2705 Correctly rejected by MCP tool enum validation\n\n### Key Findings:\n\n- The MCP tool enum contains 19 valid query_types\n- Client-side validation is working correctly, preventing invalid API calls\n- The backend API accepts all tested valid query_types\n- No evidence of query_types accepted by backend but missing from MCP enum\n- No evidence of query_types in MCP enum that are rejected by backend\n\n### Report Contents:\n\nThe detailed report at `scratch/suite-d/20260208-064028-7pufer-sd_vc_02/vc-02/contract_sanity_report.md` includes:\n\n- Full test results with actual API responses\n- Schema drift analysis\n- 5 concrete automated contract test recommendations:\n  1. Enum completeness test\n  2. Smoke test for all valid query_types\n  3. Invalid query_type rejection test\n  4. Backend schema snapshot test\n  5. Integration test with backend\n- CI/CD integration recommendations\n- Documentation requirements for future changes\n\nThe contract is currently healthy with strong alignment between the MCP tool schema and backend API! \ud83c\udf89",
+        "structured_output": null
+      }
+    },
+    {
+      "id": "sd_ca_02",
+      "name": "CA-02 (Suite D): Registry Agent report template",
+      "run_id": "20260208-064028-7pufer-sd_ca_02",
+      "passed": false,
+      "duration_ms": 281728,
+      "failures": [
+        "scratch/suite-d/20260208-064028-7pufer-sd_ca_02/ca-02/registry_review_template.md missing strings: Tools used"
+      ],
+      "tool_calls": [
+        "mcp__regen-koi__search",
+        "mcp__regen-koi__search",
+        "mcp__regen-koi__search",
+        "mcp__regen-koi__search",
+        "mcp__regen-koi__get_full_document",
+        "mcp__regen-koi__get_full_document",
+        "mcp__regen-koi__get_full_document",
+        "mcp__regen-koi__get_full_document",
+        "WebFetch",
+        "WebFetch",
+        "WebFetch",
+        "WebFetch",
+        "Write",
+        "Bash",
+        "Bash",
+        "Write",
+        "Bash"
+      ],
+      "tool_error_count": 0,
+      "assistant_text": "I'll help you create a Registry Review Report template grounded in KOI search results. Let me start by searching for relevant documentation about Registry Agent responsibilities and project review/monitoring processes.Excellent! I've found relevant documentation. Now let me retrieve some of the key documents to get detailed information for creating the template.I see that full document retrieval requires authentication. However, I have excellent search results with substantial content snippets that I can use to create a well-grounded template. Let me read the public handbook pages directly and then create the comprehensive template.Perfect! Now I have comprehensive information from the official Regen Registry Handbook. Let me create the structured Registry Review Report template based on this retrieved information.Let me check the correct path and create the template:Perfect! Let me verify the file was created successfully:## Summary\n\nI've successfully created a comprehensive **Registry Review Report Template** at `scratch/suite-d/20260208-064028-7pufer-sd_ca_02/ca-02/registry_review_template.md` (608 lines).\n\n### Key Features:\n\n**\u2705 Fully Grounded in Retrieved Documentation:**\n- Based on 4 KOI searches retrieving 50 total documents\n- 4 WebFetch calls to official Regen Registry Handbook pages\n- All sections cite specific source URLs and KOI RIDs\n\n**\ud83d\udccb Comprehensive Structure:**\n1. **Project Documentation Review** - Plan compliance & ownership verification\n2. **Monitoring & Data Collection** - Compliance tracking & quality assessment\n3. **Verification Process** - Requirements, protocol compliance, eligibility\n4. **Credit Issuance** - Calculation verification & ownership distribution\n5. **Registry Agent Compliance** - System operations & transparency\n6. **Compliance & Enforcement** - Status assessment & risk factors\n7. **Scoring Section** - Quantitative evaluation with weighted criteria\n8. **Contingencies & Corrective Actions** - For conditional approvals\n\n**\ud83d\udd0d Evidence-Based Checklists:**\n- 100+ actionable checklist items\n- Evidence requirements specified for each section\n- Findings and issues documentation fields\n\n**\ud83d\udcca Scoring System:**\n- 8 weighted categories (1-5 scale)\n- Clear rating thresholds aligned with official three-tier system:\n  - **Acceptance** (\u22654.0)\n  - **Acceptance with Contingencies** (\u22653.0)\n  - **Rejection** (<3.0)\n\n**\ud83d\udcda Full Provenance:**\n- **Section 10:** Lists all 10 source documents with URLs and RIDs\n- **Section 11:** Documents all 8 KOI tool calls used\n- **Section 12:** Explicitly states known gaps and limitations\n\n**\u26a0\ufe0f Known Gaps Explicitly Documented:**\n- Methodology-specific requirements need supplementation\n- Credit Class-specific criteria not fully detailed\n- VVC accreditation standards require additional reference\n- Geospatial and reversal monitoring protocols need expansion\n\nThe template is production-ready, auditable, and transparent about what is grounded in official documentation versus what requires user supplementation.",
+      "stderr": [],
+      "result": {
+        "subtype": "success",
+        "duration_ms": 278603,
+        "duration_api_ms": 294696,
+        "is_error": false,
+        "num_turns": 18,
+        "session_id": "d77377be-4cef-4f82-abaa-427d4ab54b28",
+        "total_cost_usd": 0.48521305000000003,
+        "usage": {
+          "input_tokens": 1027,
+          "cache_creation_input_tokens": 34393,
+          "cache_read_input_tokens": 371516,
+          "output_tokens": 13690,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 0,
+            "ephemeral_5m_input_tokens": 34393
+          }
+        },
+        "result": "## Summary\n\nI've successfully created a comprehensive **Registry Review Report Template** at `scratch/suite-d/20260208-064028-7pufer-sd_ca_02/ca-02/registry_review_template.md` (608 lines).\n\n### Key Features:\n\n**\u2705 Fully Grounded in Retrieved Documentation:**\n- Based on 4 KOI searches retrieving 50 total documents\n- 4 WebFetch calls to official Regen Registry Handbook pages\n- All sections cite specific source URLs and KOI RIDs\n\n**\ud83d\udccb Comprehensive Structure:**\n1. **Project Documentation Review** - Plan compliance & ownership verification\n2. **Monitoring & Data Collection** - Compliance tracking & quality assessment\n3. **Verification Process** - Requirements, protocol compliance, eligibility\n4. **Credit Issuance** - Calculation verification & ownership distribution\n5. **Registry Agent Compliance** - System operations & transparency\n6. **Compliance & Enforcement** - Status assessment & risk factors\n7. **Scoring Section** - Quantitative evaluation with weighted criteria\n8. **Contingencies & Corrective Actions** - For conditional approvals\n\n**\ud83d\udd0d Evidence-Based Checklists:**\n- 100+ actionable checklist items\n- Evidence requirements specified for each section\n- Findings and issues documentation fields\n\n**\ud83d\udcca Scoring System:**\n- 8 weighted categories (1-5 scale)\n- Clear rating thresholds aligned with official three-tier system:\n  - **Acceptance** (\u22654.0)\n  - **Acceptance with Contingencies** (\u22653.0)\n  - **Rejection** (<3.0)\n\n**\ud83d\udcda Full Provenance:**\n- **Section 10:** Lists all 10 source documents with URLs and RIDs\n- **Section 11:** Documents all 8 KOI tool calls used\n- **Section 12:** Explicitly states known gaps and limitations\n\n**\u26a0\ufe0f Known Gaps Explicitly Documented:**\n- Methodology-specific requirements need supplementation\n- Credit Class-specific criteria not fully detailed\n- VVC accreditation standards require additional reference\n- Geospatial and reversal monitoring protocols need expansion\n\nThe template is production-ready, auditable, and transparent about what is grounded in official documentation versus what requires user supplementation.",
+        "structured_output": null
+      }
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 0,
+    "failed": 5
+  }
+}
