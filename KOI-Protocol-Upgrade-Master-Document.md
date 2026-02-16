@@ -275,7 +275,7 @@ The coordinator serves two distinct communication surfaces that must not be conf
 |--------|-------|
 | **Endpoints** | `/koi-net/events/*`, `/koi-net/rids/*`, `/koi-net/manifests/*`, `/koi-net/bundles/*` |
 | **Ports** | 8005 (same coordinator, `/koi-net` prefix) |
-| **Authentication** | `SignedEnvelope` required (currently **permissive** — accepts unsigned) |
+| **Authentication** | `SignedEnvelope` required (`KOI_NET_REQUIRE_SIGNED=true` enforced) |
 | **Event delivery** | Must implement per-node destructive flush for compliance |
 | **Clients** | External koi-net nodes (BlockScience coordinator, future federation partners) |
 
@@ -288,31 +288,31 @@ The coordinator serves two distinct communication surfaces that must not be conf
 | V2 Event Bridge | 8100 | `EVENT_BRIDGE_URL`, `EVENT_BRIDGE_ENDPOINT` | `/process-koi-event` |
 | Semantic Bridge | 8100 | — | Same process as v2 bridge |
 
-> **Federation Access:** Signed-only mode toggle implemented (Phase 0A). The `/koi-net/*` endpoints reject unsigned requests when `KOI_NET_REQUIRE_SIGNED=true`.
+> **Federation Access:** Signed-only mode enforced (Phase 0A). The `/koi-net/*` endpoints reject unsigned requests when `KOI_NET_REQUIRE_SIGNED=true`. Verified end-to-end in Phase 4 federation tests (20 tests, all signed).
 
 ---
 
 ## 4. Gap Analysis
 
-### What's Missing for Full Compliance (updated post-Phase 3)
+### Gap Analysis (all phases complete)
 
-| Gap | Severity | Phase | Description |
-|-----|----------|-------|-------------|
-| Manifest field compatibility | **Critical** | Phase 0A | `Manifest.from_dict()` requires `size_bytes`/`content_type` — BlockScience manifests only have `{rid, timestamp, sha256_hash}`. Causes `KeyError` on ingest. |
-| Per-node poll queue semantics | **High** | Phase 0A | Strict `/koi-net/events/poll` uses global read-only queue; BlockScience uses per-node destructive flush. Causes duplicate/missed events. (Legacy already has per-node tracking.) |
-| Signed-only enforcement | **High** | Phase 0A | `/koi-net/*` accepts unsigned requests; BlockScience requires `SignedEnvelope` wrapping. Security gap for federation. |
-| Stable node identity | **High** | Phase 0A | Default node ID is `f"{name}-{timestamp}"` — changes every restart. BlockScience expects stable `KoiNetNode` RID persisted across restarts. |
-| Error type mismatch | **Medium** | Phase 0A | Coordinator emits non-BlockScience error types (`unknown_source`, `invalid_request`, etc. at coordinator lines 818–882). Must align to BlockScience's 4 types: `unknown_node`, `invalid_key`, `invalid_signature`, `invalid_target`. |
-| Edge Negotiation | **High** | Phase 1 | No `EdgeProfile` proposal/approval flow |
-| NodeProfile Announcement | **High** | Phase 1 | Node doesn't announce itself to network |
-| Peer Discovery via `first_contact` | **High** | Phase 1 | No bootstrap node connection |
-| NetworkGraph topology | **Medium** | Phase 1 | No graph-based peer management |
-| rid-lib as primary dependency | **Medium** | Phase 2 | rid-lib is optional fallback, not primary |
-| Custom RID types as rid-lib subclasses | **Medium** | Phase 2 | 7 types need metaclass registration |
-| ~~Handler Chain architecture~~ | ~~Medium~~ | ~~Phase 3~~ | **COMPLETE** — Unified 5-phase pipeline in `koi_protocol/processor/` |
-| ProcessorInterface queue | **Low** | Phase 3 | Thread-safe processing queue |
-| Polling interval configuration | **Low** | Phase 1 | Hardcoded vs configurable |
-| YAML-based NodeConfig | **Low** | Phase 1 | Missing config file system |
+| Gap | Severity | Phase | Status |
+|-----|----------|-------|--------|
+| Manifest field compatibility | Critical | Phase 0A | **RESOLVED** — `Manifest.from_dict()` accepts 3-field wire manifests |
+| Per-node poll queue semantics | High | Phase 0A | **RESOLVED** — Per-node destructive flush implemented |
+| Signed-only enforcement | High | Phase 0A | **RESOLVED** — `KOI_NET_REQUIRE_SIGNED` toggle implemented |
+| Stable node identity | High | Phase 0A | **RESOLVED** — `KoiNetNode` RID persisted across restarts |
+| Error type mismatch | Medium | Phase 0A | **RESOLVED** — Aligned to BlockScience's 4 error types |
+| Edge Negotiation | High | Phase 1 | **RESOLVED** — `EdgeProfile` proposal/approval via `/koi-net/handshake` + `/koi-net/edges/approve` |
+| NodeProfile Announcement | High | Phase 1 | **RESOLVED** — `to_koi_net_profile()` + handshake response |
+| Peer Discovery via `first_contact` | High | Phase 1 | **RESOLVED** — `handshake_with()` + config-based bootstrap |
+| NetworkGraph topology | Medium | Phase 1 | **DEFERRED** — Flat peer list sufficient for current federation; NetworkX graph is a future optimization |
+| rid-lib as primary dependency | Medium | Phase 2 | **RESOLVED** — Unconditional imports, all fallback guards removed |
+| Custom RID types as rid-lib subclasses | Medium | Phase 2 | **RESOLVED** — 7 types in `shared/rid_types/` + 3 new types |
+| Handler Chain architecture | Medium | Phase 3 | **RESOLVED** — 5-phase async pipeline in `koi_protocol/processor/` |
+| ProcessorInterface queue | Low | Phase 3 | **DEFERRED** — Current async pipeline handles concurrency; thread-safe queue not needed |
+| Polling interval configuration | Low | Phase 1 | **RESOLVED** — Configurable via `NodeConfig` |
+| YAML-based NodeConfig | Low | Phase 1 | **RESOLVED** — `NodeConfig` with YAML + env var loading |
 
 ### What's NOT Missing (Contrary to Greg's Analysis)
 
@@ -562,7 +562,7 @@ These capabilities position Regen as a valuable node in the koi-net ecosystem, n
 
 | File | Role |
 |------|------|
-| `koi-sensors/koi_protocol/coordinator/koi_coordinator.py` | Main coordinator (1790 lines) |
+| `koi-sensors/koi_protocol/coordinator/koi_coordinator.py` | Main coordinator (2057 lines) |
 | `koi-sensors/shared/koi_envelope.py` | SignedEnvelope implementation |
 | `koi-sensors/koi_protocol/core/rid_system.py` | RID base classes + re-exports from shared/rid_types/ |
 | `koi-sensors/shared/rid_types/` | rid-lib ORN subclasses (social_media, web_content, productivity, dev_tools, communication) |
@@ -578,6 +578,9 @@ These capabilities position Regen as a valuable node in the koi-net ecosystem, n
 | `koi-sensors/tests/test_persistent_cache_p2a.py` | Persistent cache tests (33 tests) |
 | `koi-sensors/tests/test_rid_lib_migration.py` | P2 RID type migration parity tests (35 tests) |
 | `koi-sensors/tests/test_rid_lib_phase2_integration.py` | P2 integration tests (24 tests) |
+| `koi-sensors/tests/federation/conftest.py` | P4 federation fixtures (signed-only, keypairs, ASGI client) |
+| `koi-sensors/tests/federation/test_wire_compat.py` | P4 Tier 1: wire compatibility (11 tests) |
+| `koi-sensors/tests/federation/test_federation_flow.py` | P4 Tier 2: federation flow (9 tests) |
 | `koi-sensors/scripts/koi_net_interop_test.py` | Level 3 interop test (manual) |
 
 ### Source Documentation (BlockScience Blog Posts)
@@ -675,7 +678,7 @@ These capabilities position Regen as a valuable node in the koi-net ecosystem, n
                                │ SignedEnvelope
                     ┌──────────▼──────────────────────┐
                     │      Regen KOI Coordinator       │
-                    │  (koi_coordinator.py - 1790 LOC) │
+                    │  (koi_coordinator.py - 2057 LOC) │
                     │                                  │
                     │  ┌──────────┐  ┌──────────────┐  │
                     │  │ /koi-net │  │   Legacy      │  │
