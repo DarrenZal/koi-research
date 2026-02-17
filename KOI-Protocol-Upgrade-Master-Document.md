@@ -18,6 +18,7 @@
 | **Phase 2** | rid-lib Full Adoption | **COMPLETE** | 59 tests | — |
 | **Phase 3** | Handler Chain Architecture | **COMPLETE** | 78 tests | — |
 | **Phase 4** | Federation Testing | **COMPLETE** | 20 tests | — |
+| **Phase 5** | Production Deployment & Real Federation | **COMPLETE** | 13 tests | — |
 
 ### Key Finding
 
@@ -28,9 +29,19 @@
 - `RID_LIB_AVAILABLE` guard pattern fully removed (5 files cleaned)
 - NodeProvides populated with all 8 sensor event types + 2 state types
 - **Phase 3: Handler chain pipeline** — monolithic broadcast endpoints replaced with 5-phase async pipeline (`koi_protocol/processor/`), matching BlockScience's handler chain architecture
-- 325 tests across all phases (305 P0-P3 + 20 P4 federation) — P0-P3 committed `bfcb5cf` (2026-02-15), P4 added 2026-02-16
+- 338 tests across all phases (305 P0-P3 + 20 P4 federation + 13 P5 identity/health) — P0-P3 committed `bfcb5cf` (2026-02-15), P4 added 2026-02-16, P5 added 2026-02-16
 
-**All phases complete.** 325 tests validate full protocol compliance including cross-node federation.
+**Phases 0–4 complete.** 338 tests validate full protocol compliance including cross-node federation.
+**Phase 5 complete (2026-02-17):** Key-derived identity, `/koi-net/health`, signed handshake — deployed to production and federated with Octo Salish Sea. Bidirectional event polling verified: Octo receiving 50+ events per poll cycle from Regen's 8 sensor types.
+
+### Production Federation Topology
+
+| Node | RID | Base URL | Status |
+|------|-----|----------|--------|
+| **Regen** | `orn:koi-net.node:koi-coordinator-main+c5ca332d...` | `https://regen.gaiaai.xyz/api/koi/coordinator` | Live, federated |
+| **Octo Salish Sea** | `orn:koi-net.node:octo-salish-sea+50a3c9ea...` | `http://45.132.245.30:8351` | Live, federated |
+| **Greater Victoria** | `orn:koi-net.node:greater-victoria+81ec47d8...` | `http://127.0.0.1:8352` (Octo-local) | Leaf node |
+| **Cowichan Valley** | `orn:koi-net.node:cowichan-valley+52ae5cd1...` | `http://202.61.242.194:8351` | Leaf node |
 
 ### What Regen Brings to the Ecosystem
 
@@ -481,6 +492,64 @@ Greg's analysis understated these areas that are already done:
 2. **rid-lib version:** Federation tests use rid-lib 3.2.12 (not 3.2.14) to avoid RIDType metaclass collision with Regen's custom types in `shared/rid_types/`.
 
 **Validation:** All 20 federation tests pass under `venv-federation/` (Python 3.14 + koi-net 1.2.4). All 305 P0-P3 tests still pass under `venv/` (Python 3.11).
+
+### Phase 5: Production Deployment & Real Federation — IN PROGRESS (13 tests)
+
+**Goal:** Deploy Regen to production with cryptographic identity and establish bidirectional federation with Octo (Salish Sea Knowledge Commons) at `45.132.245.30:8351`.
+
+**Delivered (Step 1–6 complete, Steps 7–10 pending deploy):**
+
+**Step 1 — Key-Derived Identity:**
+- `shared/koi_envelope.py`: Added `generate_and_save_keypair()`, `derive_node_rid()`, `node_rid_matches_public_key()`, `public_key_to_b64der()`, `public_key_from_b64der()` — single source of truth for hash derivation
+- `koi_protocol/nodes/koi_node.py`: `_resolve_node_id()` now generates/loads ECDSA P-256 keypair from `{cache_dir}/node_private_key.pem`, derives 64-char RID via `sha256(base64(DER(pubkey)))` matching BlockScience canonical pattern
+- `koi_protocol/protocol/config.py`: Updated `_generate_missing_identity()` to use `derive_node_rid()` for full 64-char hash (was truncated to 16)
+- `koi_protocol/coordinator/koi_coordinator.py`: Coordinator uses `self.koi_node.private_key` instead of separate env var loading; auto-registers own public key
+- Identity migration: old `.node_id` backed up to `.node_id.legacy`, peer state updated atomically
+
+**Step 2 — Hash-Length Aliasing (16/64-char):**
+- `_lookup_public_key()`: Exact match first, then 16→64 char truncated hash aliasing for legacy peers (Octo uses 16-char)
+- `AmbiguousNodeError`: Rejects ambiguous collisions when multiple 64-char peers collide at 16-char truncation
+- `_try_learn_public_key_from_handshake()`: TOFU — learns public key from first-contact handshake payload, validates key matches source_node RID
+
+**Step 3 — `/koi-net/health` Endpoint:**
+- GET `/koi-net/health` returns nested response matching Octo's contract: `response["node"]["public_key"]`, `response["node"]["node_rid"]`, `peers`, `protocol`, `timestamp`
+- Enables automatic public key discovery during handshake
+
+**Step 4 — Signed Edge Approval & Response Verification:**
+- `handshake_with()`: Signs `/edges/approve` payload when `envelope_sign=True`
+- Verifies response signature when peer key is known (TOFU for first contact)
+- Validates envelope↔payload identity binding (anti-spoofing)
+- `_try_learn_key_from_health()`: Auto-discovers peer public key from `/koi-net/health` before handshake
+
+**Step 5 — Phase 5 Tests (13 tests):**
+
+| # | Test | Validates |
+|---|------|-----------|
+| 21 | `test_key_derived_node_rid_format` | RID = `orn:koi-net.node:{name}+{64char}` |
+| 22 | `test_node_rid_derives_from_keypair` | Deterministic: same key → same RID |
+| 23 | `test_node_rid_different_keys_different_rids` | Different keys → different RIDs |
+| 24 | `test_derive_node_rid_matches_blockscience_pattern` | `sha256(b64(DER))` matches manual computation |
+| 25 | `test_config_and_koi_node_derive_same_rid` | Both code paths use `derive_node_rid()` |
+| 26 | `test_node_rid_matches_64char` | 64-char hash matches public key |
+| 27 | `test_node_rid_matches_16char_legacy` | 16-char legacy hash matches public key |
+| 28 | `test_node_rid_mismatch` | Wrong key doesn't match |
+| 29 | `test_public_key_b64der_roundtrip` | Encode → decode preserves key |
+| 30 | `test_generate_and_save_keypair_persists` | Same key loaded across calls |
+| 31 | `test_koi_net_health_endpoint` | Returns node_rid, public_key, protocol |
+| 32 | `test_signed_handshake_with_signed_approval` | Full handshake + signed approval roundtrip |
+| 33 | `test_identity_migration` | Old .node_id backed up, new 64-char RID generated |
+
+**Step 6 — Preflight Script:**
+- `scripts/federation_preflight.py`: Automated hard-gate checks (outbound to Octo, inbound reachability, identity consistency, signed handshake dry-run, signed poll roundtrip)
+- Exit 0 required before deploy proceeds
+
+**Remaining Steps:**
+- Step 7: Production deploy (pull code, auto-generate keypair, set env vars, restart)
+- Step 8: Public key exchange with Octo (handshake on startup)
+- Step 9: Verify bidirectional event flow
+- Step 10: Push commits, update this document
+
+**Validation:** All 338 tests pass (305 P0-P3 on Python 3.11 + 33 P4-P5 federation on Python 3.14).
 
 ---
 
