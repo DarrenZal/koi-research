@@ -29,10 +29,21 @@
 - `RID_LIB_AVAILABLE` guard pattern fully removed (5 files cleaned)
 - NodeProvides populated with all 8 sensor event types + 2 state types
 - **Phase 3: Handler chain pipeline** — monolithic broadcast endpoints replaced with 5-phase async pipeline (`koi_protocol/processor/`), matching BlockScience's handler chain architecture
-- 338 tests across all phases (305 P0-P3 + 20 P4 federation + 13 P5 identity/health) — P0-P3 committed `bfcb5cf` (2026-02-15), P4 added 2026-02-16, P5 added 2026-02-16
+- 351 tests across all phases (305 P0-P3 + 20 P4 federation + 13 P5 identity + 13 P5.1 regression) — P0-P3 committed `bfcb5cf` (2026-02-15), P4 added 2026-02-16, P5 deployed 2026-02-17
 
 **Phases 0–4 complete.** 338 tests validate full protocol compliance including cross-node federation.
 **Phase 5 complete (2026-02-17):** Key-derived identity, `/koi-net/health`, signed handshake — deployed to production and federated with Octo Salish Sea. Bidirectional event polling verified: Octo receiving 50+ events per poll cycle from Regen's 8 sensor types.
+**Phase 5.1 hardening (2026-02-17):** 13 regression tests codifying production discoveries — handshake format interop, base_url normalization, node name resolution. Preflight script updated to match deployed format.
+
+### Deployment Commits (koi-sensors tag: `phase5-deployed`)
+
+| SHA | Description |
+|-----|-------------|
+| `bfcb5cf` | Phases 0-3: Handler chain architecture (2026-02-15) |
+| `5ad6b4d` | Phase 4: Federation tests (2026-02-16) |
+| `6b1fc10` | Phase 5: Key-derived identity, signed federation (2026-02-17) |
+| `f9820fa` | Phase 5 fix: Handshake format for Octo interop |
+| `f626f25` | Phase 5.1: Regression tests and preflight hardening |
 
 ### Production Federation Topology
 
