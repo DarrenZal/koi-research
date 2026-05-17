@@ -1,0 +1,429 @@
+{
+  "suite": "suite_b",
+  "env": "prod",
+  "generated_at": "2026-05-17T08:11:04.752581+00:00",
+  "koi_api_endpoint": "https://regen.gaiaai.xyz/api/koi",
+  "k": 10,
+  "as_of": {
+    "corpus_version": "2026-05-17",
+    "indexed_at": "2026-05-17T08:11:07.311Z"
+  },
+  "summary": {
+    "total": 7,
+    "passed": 5,
+    "failed": 2,
+    "pass_rate": 0.7142857142857143,
+    "avg_hit_rank_worst": 3.1666666666666665
+  },
+  "baseline_diff": {
+    "status": "red",
+    "baseline_generated_at": "2026-01-08T22:45:51.822574+00:00",
+    "baseline_as_of": {
+      "corpus_version": "2026-01-08",
+      "indexed_at": "2026-01-08T22:45:54.916Z"
+    },
+    "baseline_pass_rate": 1.0,
+    "current_pass_rate": 0.7142857142857143,
+    "pass_rate_drop": 0.2857142857142857,
+    "regressions": [
+      {
+        "id": "search_msg_create_batch_001"
+      },
+      {
+        "id": "graph_search_entities_basket_001"
+      }
+    ],
+    "critical_regressions": [],
+    "improvements": [],
+    "rank_regressions": [
+      {
+        "id": "graph_search_entities_msg_create_batch_001",
+        "baseline_rank": 1,
+        "current_rank": 8,
+        "delta": 7
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "search_registry_agent_001",
+      "tool": "query",
+      "critical": true,
+      "notes": "Public Registry Agent sources should be discoverable.",
+      "input": {
+        "query": "Registry Agent",
+        "limit": 10
+      },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "handbook.regen.network/regen-registry-overview/users",
+              "github.com/regen-network/regen-registry-handbook/blob/main/regen-registry-overview/users.md"
+            ]
+          }
+        ]
+      },
+      "hit": true,
+      "min_results_ok": true,
+      "required_matches": [
+        {
+          "hit": true,
+          "first_rank": 2,
+          "matched_value": "github.com/regen-network/regen-registry-handbook/blob/main/regen-registry-overview/users.md",
+          "type": "url_contains"
+        }
+      ],
+      "hit_rank_best": 2,
+      "hit_rank_worst": 2,
+      "observed_top": [
+        "https://handbook.regen.network/regen-validation-and-verification/regen-registry-verification-and-validation-manual/verification-process",
+        "https://github.com/regen-network/regen-registry-handbook/blob/main/regen-registry-overview/users.md",
+        "https://handbook.regen.network/regen-registry-overview/users",
+        "https://www.youtube.com/watch?v=P2r0jrrybfI",
+        "https://forum.regen.network/t/the-registry-assistant-scaling-regenerative-verification-through-intelligent-infrastructure/577/1",
+        "https://forum.regen.network/t/announcing-regen-ai/553",
+        "https://forum.regen.network/t/announcing-regen-ai/553/1",
+        "https://guides.regen.network/technical-documentation/data-access-and-apis/anchored-metadata",
+        "https://handbook.regen.network/protocol-development/approval-of-new-credit-protocols-and-credit-types",
+        "https://forum.regen.network/t/the-registry-assistant-scaling-regenerative-verification-through-intelligent-infrastructure/577"
+      ],
+      "latency_ms": 2704,
+      "as_of": {
+        "corpus_version": "2026-05-17",
+        "indexed_at": "2026-05-17T08:11:07.311Z"
+      }
+    },
+    {
+      "id": "search_ecocredit_messages_001",
+      "tool": "query",
+      "critical": true,
+      "notes": "Should surface canonical ecocredit messages documentation.",
+      "input": {
+        "query": "ecocredit spec 03_messages.md MsgCreateBatch",
+        "limit": 10
+      },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "docs.regen.network/modules/ecocredit/03_messages",
+              "github.com/regen-network/regen-ledger/blob/main/x/ecocredit/spec/03_messages.md"
+            ]
+          }
+        ]
+      },
+      "hit": true,
+      "min_results_ok": true,
+      "required_matches": [
+        {
+          "hit": true,
+          "first_rank": 1,
+          "matched_value": "docs.regen.network/modules/ecocredit/03_messages",
+          "type": "url_contains"
+        }
+      ],
+      "hit_rank_best": 1,
+      "hit_rank_worst": 1,
+      "observed_top": [
+        "https://docs.regen.network/modules/ecocredit/03_messages",
+        "https://github.com/regen-network/regen-ledger/blob/main/x/ecocredit/spec/03_messages.md",
+        "https://github.com/regen-network/regen-ledger/blob/main/docs/tutorials/user/credit-class-project-batch-management.md",
+        "https://docs.regen.network/modules/ecocredit/features/types/msg_create_batch",
+        "https://docs.regen.network/modules/ecocredit/features/server/msg_create_batch",
+        "https://docs.regen.network/modules/ecocredit/features/types/msg_mint_batch_credits",
+        "https://docs.regen.network/modules/ecocredit/features/server/msg_mint_batch_credits",
+        "https://docs.regen.network/modules/ecocredit/features/server/msg_send",
+        "https://github.com/regen-network/regen-ledger/blob/main/docs/ledger/migrations/v4.0-migration.md",
+        "https://docs.regen.network/modules/ecocredit/features/server/msg_seal_batch"
+      ],
+      "latency_ms": 4022,
+      "as_of": {
+        "corpus_version": "2026-05-17",
+        "indexed_at": "2026-05-17T08:11:11.334Z"
+      }
+    },
+    {
+      "id": "search_basket_rfc_001",
+      "tool": "query",
+      "critical": false,
+      "notes": "Basket functionality RFC should be retrievable.",
+      "input": {
+        "query": "basket token basket functionality RFC 002",
+        "limit": 10
+      },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "github.com/regen-network/regen-ledger/blob/main/specs/rfcs/002-basket-functionality/README.md"
+            ]
+          }
+        ]
+      },
+      "hit": true,
+      "min_results_ok": true,
+      "required_matches": [
+        {
+          "hit": true,
+          "first_rank": 6,
+          "matched_value": "github.com/regen-network/regen-ledger/blob/main/specs/rfcs/002-basket-functionality/README.md",
+          "type": "url_contains"
+        }
+      ],
+      "hit_rank_best": 6,
+      "hit_rank_worst": 6,
+      "observed_top": [
+        "https://github.com/regen-network/regen-ledger/blob/main/x/ecocredit/spec/01_concepts.md",
+        "https://forum.regen.network/t/permissionless-credit-class-creation-on-regen-network/114/32",
+        "https://forum.regen.network/t/software-upgrade-proposal-regen-ledger-v3-0/217/2",
+        "https://docs.regen.network/modules/ecocredit",
+        "https://docs.regen.network/modules/ecocredit/features/types/state_basket",
+        "https://github.com/regen-network/regen-ledger/blob/main/specs/rfcs/002-basket-functionality/README.md",
+        "https://github.com/regen-network/regen-ledger/blob/main/x/ecocredit/spec/README.md",
+        "https://github.com/regen-network/regen-claude-config/blob/main/skills/regen-econ-finance/simulation-designer.md",
+        "https://github.com/regen-network/regen-ledger/blob/main/specs/rfcs/README.md",
+        "https://docs.regen.network/modules/ecocredit/features/server/msg_take"
+      ],
+      "latency_ms": 2269,
+      "as_of": {
+        "corpus_version": "2026-05-17",
+        "indexed_at": "2026-05-17T08:11:13.703Z"
+      }
+    },
+    {
+      "id": "search_validators_upgrades_001",
+      "tool": "query",
+      "critical": true,
+      "notes": "Validator upgrade docs are a core operational workflow.",
+      "input": {
+        "query": "docs/validators/upgrades README",
+        "limit": 10
+      },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "github.com/regen-network/regen-ledger/blob/main/docs/validators/upgrades/README.md"
+            ]
+          }
+        ]
+      },
+      "hit": true,
+      "min_results_ok": true,
+      "required_matches": [
+        {
+          "hit": true,
+          "first_rank": 1,
+          "matched_value": "github.com/regen-network/regen-ledger/blob/main/docs/validators/upgrades/README.md",
+          "type": "url_contains"
+        }
+      ],
+      "hit_rank_best": 1,
+      "hit_rank_worst": 1,
+      "observed_top": [
+        "https://github.com/regen-network/regen-ledger/blob/main/docs/validators/upgrades/README.md",
+        "https://github.com/regen-network/regen-ledger/blob/main/docs/validators/upgrades/v5.1-upgrade.md",
+        "https://github.com/regen-network/regen-ledger/blob/main/docs/validators/upgrades/v3.0-upgrade.md",
+        "https://github.com/gaiaaiagent/koi-sensors/blob/main/indexing/test_output/technical/regen-ledger/github_regen-ledger_upgrade_guide_v50.md",
+        "https://forum.regen.network/t/software-upgrade-proposal-regen-ledger-v7-0/574",
+        "https://forum.regen.network/t/about-the-validators-category/15",
+        "https://forum.regen.network/t/about-the-events-category/11",
+        "https://forum.regen.network/t/regen-tokenomics-wg/19/14",
+        "https://github.com/regen-network/regen-ledger/blob/main/docs/validators/get-started/using-quickstart.md",
+        "https://github.com/regen-network/agentic-tokenomics/blob/main/docs/governance/open-questions-resolution.md"
+      ],
+      "latency_ms": 2885,
+      "as_of": {
+        "corpus_version": "2026-05-17",
+        "indexed_at": "2026-05-17T08:11:16.589Z"
+      }
+    },
+    {
+      "id": "search_msg_create_batch_001",
+      "tool": "query",
+      "critical": false,
+      "notes": "Message grounding: should quickly find the canonical proto or generated types.",
+      "input": {
+        "query": "MsgCreateBatch tx.proto",
+        "limit": 10
+      },
+      "assert": {
+        "min_results": 3,
+        "required_matches": [
+          {
+            "type": "url_contains",
+            "values": [
+              "github.com/regen-network/regen-ledger/blob/main/proto/regen/ecocredit/v1alpha1/tx.proto",
+              "github.com/regen-network/regen-ledger/blob/main/x/ecocredit/base/types/v1/tx.pb.go"
+            ]
+          }
+        ]
+      },
+      "hit": false,
+      "min_results_ok": true,
+      "required_matches": [
+        {
+          "hit": false,
+          "first_rank": null,
+          "matched_value": null,
+          "type": "url_contains"
+        }
+      ],
+      "hit_rank_best": null,
+      "hit_rank_worst": null,
+      "observed_top": [
+        "https://docs.regen.network/modules/ecocredit/features/types/msg_create_batch",
+        "https://github.com/regen-network/regen-ledger/blob/main/docs/ledger/migrations/v4.0-migration.md",
+        "https://github.com/regen-network/regen-js/blob/main/CHANGELOG.md",
+        "https://github.com/regen-network/agentic-tokenomics/blob/main/phase-3/3.4-security-framework.md",
+        "https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/docs/TREE_SITTER_INTEGRATION_PLAN.md",
+        "https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/docs/DEPLOYMENT.md",
+        "https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/archive/full_stack_tech_agent_old/archive/phase-reports/GRAPH_TOOL_REPORT.md",
+        "https://forum.regen.network/t/software-upgrade-proposal-regen-ledger-v7-0/574/1",
+        "https://github.com/regen-network/agentic-tokenomics/blob/main/README.md",
+        "https://github.com/gaiaaiagent/regen-koi-mcp/blob/main/archive/full_stack_tech_agent_old/archive/phase-reports/AGE_SETUP_REPORT.md"
+      ],
+      "latency_ms": 1882,
+      "as_of": {
+        "corpus_version": "2026-05-17",
+        "indexed_at": "2026-05-17T08:11:18.374Z"
+      }
+    },
+    {
+      "id": "graph_search_entities_msg_create_batch_001",
+      "tool": "graph",
+      "critical": true,
+      "notes": "Code graph should find the MsgCreateBatch symbol in ecocredit.",
+      "input": {
+        "query_type": "search_entities",
+        "entity_name": "MsgCreateBatch",
+        "limit": 10
+      },
+      "assert": {
+        "min_results": 1,
+        "required_matches": [
+          {
+            "type": "entity_name_equals",
+            "values": [
+              "MsgCreateBatch"
+            ]
+          },
+          {
+            "type": "file_path_contains",
+            "values": [
+              "x/ecocredit",
+              "proto/regen/ecocredit"
+            ]
+          }
+        ]
+      },
+      "hit": true,
+      "min_results_ok": true,
+      "required_matches": [
+        {
+          "hit": true,
+          "first_rank": 8,
+          "matched_value": "MsgCreateBatch",
+          "type": "entity_name_equals"
+        },
+        {
+          "hit": true,
+          "first_rank": 6,
+          "matched_value": "x/ecocredit",
+          "type": "file_path_contains"
+        }
+      ],
+      "hit_rank_best": 6,
+      "hit_rank_worst": 8,
+      "observed_top": [
+        "createBaseMsgCreateBatch",
+        "createBaseMsgCreateBatchResponse",
+        "createBaseMsgCreateBatch",
+        "createBaseMsgCreateBatch_BatchIssuance",
+        "createBaseMsgCreateBatchResponse",
+        "parseMsgCreateBatch",
+        "SimulateMsgCreateBatch",
+        "MsgCreateBatch",
+        "MsgCreateBatchProtoMsg",
+        "MsgCreateBatchAmino"
+      ],
+      "latency_ms": 401,
+      "as_of": {
+        "corpus_version": "2026-05-17",
+        "indexed_at": "2026-05-17T08:11:18.874Z"
+      }
+    },
+    {
+      "id": "graph_search_entities_basket_001",
+      "tool": "graph",
+      "critical": false,
+      "notes": "Code graph should surface basket module code paths.",
+      "input": {
+        "query_type": "search_entities",
+        "entity_name": "Basket",
+        "limit": 10
+      },
+      "assert": {
+        "min_results": 1,
+        "required_matches": [
+          {
+            "type": "entity_name_contains",
+            "values": [
+              "Basket"
+            ]
+          },
+          {
+            "type": "file_path_contains",
+            "values": [
+              "x/ecocredit/basket"
+            ]
+          }
+        ]
+      },
+      "hit": false,
+      "min_results_ok": true,
+      "required_matches": [
+        {
+          "hit": true,
+          "first_rank": 1,
+          "matched_value": "Basket",
+          "type": "entity_name_contains"
+        },
+        {
+          "hit": false,
+          "first_rank": null,
+          "matched_value": null,
+          "type": "file_path_contains"
+        }
+      ],
+      "hit_rank_best": 1,
+      "hit_rank_worst": 1,
+      "observed_top": [
+        "Basket",
+        "BasketBalance",
+        "BasketResponse",
+        "BasketBalanceResponse",
+        "BasketInfo",
+        "BasketBalance",
+        "BasketFee",
+        "BasketCriteria",
+        "ListBasketsResponse",
+        "GetBasketResponse"
+      ],
+      "latency_ms": 357,
+      "as_of": {
+        "corpus_version": "2026-05-17",
+        "indexed_at": "2026-05-17T08:11:19.231Z"
+      }
+    }
+  ]
+}
