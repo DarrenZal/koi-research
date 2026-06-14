@@ -1,0 +1,541 @@
+{
+  "suite": "suite_d_delta",
+  "env": "prod",
+  "generated_at": "2026-06-14T09:31:54.051957+00:00",
+  "run_id": "20260614-093154-jo2r5m",
+  "model": "sonnet",
+  "koi_api_endpoint": "https://regen.gaiaai.xyz/api/koi",
+  "thresholds": {
+    "max_koi_hallucination_rate": 0.2,
+    "min_koi_verifiable_citations": 5,
+    "min_verified_rate_delta_yellow": -0.05,
+    "min_verified_rate_delta_red": -0.15
+  },
+  "pairs": [
+    {
+      "id": "delta_kv_01",
+      "name": "KV-01 (Delta): Basket tokens \u2014 baseline vs KOI-grounded",
+      "status": "green",
+      "reason": "within thresholds",
+      "baseline": {
+        "variant": "baseline",
+        "run_id": "20260614-093154-jo2r5m-delta_kv_01-baseline",
+        "passed": true,
+        "duration_ms": 110120,
+        "failures": [],
+        "tool_calls": [
+          "Bash",
+          "Glob",
+          "Glob",
+          "Glob",
+          "Read",
+          "Read",
+          "Read",
+          "Read",
+          "Read",
+          "Read",
+          "Read",
+          "Grep",
+          "Read",
+          "Glob",
+          "Read",
+          "Read",
+          "Grep",
+          "Read",
+          "Write"
+        ],
+        "tool_calls_total": 19,
+        "tool_error_count": 0,
+        "assistant_text": "I'll help you create an engineer-facing explainer about Regen ecocredit basket tokens. Let me start by exploring the codebase and gathering information.Now I have enough information to write the report. Let me create the report with the required sections.Perfect! I've successfully created an engineer-facing explainer about Regen ecocredit basket tokens. Here's what I delivered:\n\n## Summary\n\nThe report is now available at `scratch/suite-d/20260614-093154-jo2r5m-delta_kv_01-baseline/delta-kv-01/report.md` with all required sections:\n\n1. **Summary** (3 sentences): Concise overview of basket tokens as fungible Bank module coins backed 1:1 by ecocredits\n\n2. **How it works** (plain English): Detailed explanations of:\n   - Creating baskets with curator-defined criteria\n   - Depositing credits (Put operation) with validation and token minting\n   - Withdrawing credits (Take operation) with FIFO ordering\n   - Date criteria enforcement mechanisms\n   - Token denomination formatting with SI prefixes\n   - Curator control capabilities\n\n3. **Code pointers** (10 concrete references): Including:\n   - `Keeper.Put` \u2192 `msg_put.go`\n   - `Keeper.Take` \u2192 `msg_take.go`\n   - `Keeper.Create` \u2192 `msg_create.go`\n   - `canBasketAcceptCredit` validation function\n   - `FormatBasketDenom` utility\n   - Protobuf schemas for state and transactions\n   - And 4 more key symbols\n\n4. **Sources** (8 citations): All local file paths from regen-ledger including keeper implementations, protobuf schemas, utilities, RFC-002, and spec documentation\n\n5. **Tools used**: Documented all Read, Glob, Grep, and Bash invocations. Explicitly noted that KOI MCP tools were NOT available during this analysis\n\n6. **Uncertainties** (6 items): Including questions about PickFromBasket removal, fee distribution mechanisms, basket criteria upgradeability differences from RFC, retirement edge cases, deprecated exponent field, and allowed classes immutability\n\nThe report is grounded in actual source code from the `regen-ledger` repository under `x/ecocredit/basket/` and provides engineers with actionable information about the basket token implementation.",
+        "stderr": [],
+        "result": {
+          "subtype": "success",
+          "duration_ms": 108512,
+          "duration_api_ms": 113489,
+          "is_error": false,
+          "num_turns": 20,
+          "session_id": "9160535f-81ac-490c-ae0f-304376a251bc",
+          "total_cost_usd": 0.3592059,
+          "usage": {
+            "input_tokens": 69,
+            "cache_creation_input_tokens": 52499,
+            "cache_read_input_tokens": 239008,
+            "output_tokens": 4633,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 52499
+            }
+          },
+          "result": "Perfect! I've successfully created an engineer-facing explainer about Regen ecocredit basket tokens. Here's what I delivered:\n\n## Summary\n\nThe report is now available at `scratch/suite-d/20260614-093154-jo2r5m-delta_kv_01-baseline/delta-kv-01/report.md` with all required sections:\n\n1. **Summary** (3 sentences): Concise overview of basket tokens as fungible Bank module coins backed 1:1 by ecocredits\n\n2. **How it works** (plain English): Detailed explanations of:\n   - Creating baskets with curator-defined criteria\n   - Depositing credits (Put operation) with validation and token minting\n   - Withdrawing credits (Take operation) with FIFO ordering\n   - Date criteria enforcement mechanisms\n   - Token denomination formatting with SI prefixes\n   - Curator control capabilities\n\n3. **Code pointers** (10 concrete references): Including:\n   - `Keeper.Put` \u2192 `msg_put.go`\n   - `Keeper.Take` \u2192 `msg_take.go`\n   - `Keeper.Create` \u2192 `msg_create.go`\n   - `canBasketAcceptCredit` validation function\n   - `FormatBasketDenom` utility\n   - Protobuf schemas for state and transactions\n   - And 4 more key symbols\n\n4. **Sources** (8 citations): All local file paths from regen-ledger including keeper implementations, protobuf schemas, utilities, RFC-002, and spec documentation\n\n5. **Tools used**: Documented all Read, Glob, Grep, and Bash invocations. Explicitly noted that KOI MCP tools were NOT available during this analysis\n\n6. **Uncertainties** (6 items): Including questions about PickFromBasket removal, fee distribution mechanisms, basket criteria upgradeability differences from RFC, retirement edge cases, deprecated exponent field, and allowed classes immutability\n\nThe report is grounded in actual source code from the `regen-ledger` repository under `x/ecocredit/basket/` and provides engineers with actionable information about the basket token implementation.",
+          "structured_output": null
+        },
+        "citations": {
+          "total_citations": 6,
+          "verifiable_citations": 6,
+          "verified_count": 6,
+          "failed_count": 0,
+          "skipped_count": 0,
+          "verified_rate": 1.0,
+          "hallucination_rate": 0.0
+        },
+        "citations_files": [
+          {
+            "total_citations": 6,
+            "verifiable_citations": 6,
+            "verified_count": 6,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "verified_rate": 1.0,
+            "hallucination_rate": 0.0,
+            "source_file": "scratch/suite-d/20260614-093154-jo2r5m-delta_kv_01-baseline/delta-kv-01/report.md"
+          }
+        ],
+        "koi_tool_calls": {
+          "search": 0,
+          "query_code_graph": 0
+        }
+      },
+      "koi": {
+        "variant": "koi",
+        "run_id": "20260614-093154-jo2r5m-delta_kv_01-koi",
+        "passed": true,
+        "duration_ms": 104184,
+        "failures": [],
+        "tool_calls": [
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__query_code_graph",
+          "mcp__regen-koi__search_github_docs",
+          "mcp__regen-koi__get_full_document",
+          "mcp__regen-koi__query_code_graph",
+          "mcp__regen-koi__search_github_docs",
+          "Grep",
+          "Glob",
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__search_github_docs",
+          "mcp__regen-koi__search_github_docs",
+          "mcp__regen-koi__search",
+          "Bash",
+          "Write"
+        ],
+        "tool_calls_total": 14,
+        "tool_error_count": 0,
+        "assistant_text": "I'll help you create an engineer-facing explainer about Regen ecocredit basket tokens. Let me start by using the available KOI MCP tools to gather information.Now let me get more specific information about basket code in regen-ledger:Let me search for more code-specific information:Let me search for more specific code information about basket implementation:Now let me create the directory and write the report:Perfect! I've created a comprehensive engineer-facing explainer about Regen ecocredit basket tokens. Here's what I delivered:\n\n## Summary of Deliverable\n\nThe report has been written to `scratch/suite-d/20260614-093154-jo2r5m-delta_kv_01-koi/delta-kv-01/report.md` with all required sections:\n\n### Key Highlights:\n\n1. **Summary** (2-4 sentences): Explains basket tokens as fungible, IBC-compatible tokens that solve the liquidity problem of non-fungible ecocredit batches.\n\n2. **How it works** (plain English): Covers the deposit/withdrawal flow, MsgPut/MsgTake operations, criteria-based selection, fee mechanisms, and DeFi integration benefits.\n\n3. **Code pointers** (6 specific locations): Lists concrete file paths in regen-ledger including:\n   - Proto type definitions\n   - MsgPut/MsgTake handlers\n   - Keeper logic\n   - Query service\n   - Specification docs\n\n4. **Sources** (5 citations): Includes specific file paths from regen-ledger repository with GitHub URLs, RFC documents, and official documentation links.\n\n5. **Tools used**: Documents all 3 KOI MCP tools that were invoked (search, query_code_graph, search_github_docs) with details about what was queried.\n\n6. **Uncertainties**: Transparently lists 5 specific areas where information could not be fully verified, including exact keeper implementation details, fee structures, and selection algorithms.\n\nThe report leveraged the available KOI MCP tools extensively to ground the content in actual Regen Network documentation and code references, providing an accurate, engineer-focused explanation of the basket token system.",
+        "stderr": [],
+        "result": {
+          "subtype": "success",
+          "duration_ms": 101139,
+          "duration_api_ms": 97257,
+          "is_error": false,
+          "num_turns": 15,
+          "session_id": "385df031-e2eb-4c5b-968b-763d35c07f4e",
+          "total_cost_usd": 0.22168985,
+          "usage": {
+            "input_tokens": 33,
+            "cache_creation_input_tokens": 22635,
+            "cache_read_input_tokens": 231531,
+            "output_tokens": 3644,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 22635
+            }
+          },
+          "result": "Perfect! I've created a comprehensive engineer-facing explainer about Regen ecocredit basket tokens. Here's what I delivered:\n\n## Summary of Deliverable\n\nThe report has been written to `scratch/suite-d/20260614-093154-jo2r5m-delta_kv_01-koi/delta-kv-01/report.md` with all required sections:\n\n### Key Highlights:\n\n1. **Summary** (2-4 sentences): Explains basket tokens as fungible, IBC-compatible tokens that solve the liquidity problem of non-fungible ecocredit batches.\n\n2. **How it works** (plain English): Covers the deposit/withdrawal flow, MsgPut/MsgTake operations, criteria-based selection, fee mechanisms, and DeFi integration benefits.\n\n3. **Code pointers** (6 specific locations): Lists concrete file paths in regen-ledger including:\n   - Proto type definitions\n   - MsgPut/MsgTake handlers\n   - Keeper logic\n   - Query service\n   - Specification docs\n\n4. **Sources** (5 citations): Includes specific file paths from regen-ledger repository with GitHub URLs, RFC documents, and official documentation links.\n\n5. **Tools used**: Documents all 3 KOI MCP tools that were invoked (search, query_code_graph, search_github_docs) with details about what was queried.\n\n6. **Uncertainties**: Transparently lists 5 specific areas where information could not be fully verified, including exact keeper implementation details, fee structures, and selection algorithms.\n\nThe report leveraged the available KOI MCP tools extensively to ground the content in actual Regen Network documentation and code references, providing an accurate, engineer-focused explanation of the basket token system.",
+          "structured_output": null
+        },
+        "citations": {
+          "total_citations": 14,
+          "verifiable_citations": 14,
+          "verified_count": 14,
+          "failed_count": 0,
+          "skipped_count": 0,
+          "verified_rate": 1.0,
+          "hallucination_rate": 0.0
+        },
+        "citations_files": [
+          {
+            "total_citations": 14,
+            "verifiable_citations": 14,
+            "verified_count": 14,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "verified_rate": 1.0,
+            "hallucination_rate": 0.0,
+            "source_file": "scratch/suite-d/20260614-093154-jo2r5m-delta_kv_01-koi/delta-kv-01/report.md"
+          }
+        ],
+        "koi_tool_calls": {
+          "search": 7,
+          "query_code_graph": 2
+        }
+      },
+      "delta": {
+        "citations_total_delta": 8,
+        "verifiable_citations_delta": 8,
+        "verified_rate_delta": 0.0,
+        "hallucination_rate_delta": 0.0,
+        "tool_calls_total_delta": -5,
+        "duration_ms_delta": -5936
+      }
+    },
+    {
+      "id": "delta_kv_02",
+      "name": "KV-02 (Delta): Regen Ledger upgrades \u2014 baseline vs KOI-grounded",
+      "status": "red",
+      "reason": "verified_rate_delta<-0.15",
+      "baseline": {
+        "variant": "baseline",
+        "run_id": "20260614-093154-jo2r5m-delta_kv_02-baseline",
+        "passed": true,
+        "duration_ms": 142365,
+        "failures": [],
+        "tool_calls": [
+          "Bash",
+          "Bash",
+          "Glob",
+          "Glob",
+          "Grep",
+          "Read",
+          "Read",
+          "Read",
+          "Read",
+          "Read",
+          "Read",
+          "Glob",
+          "Read",
+          "Grep",
+          "Read",
+          "Glob",
+          "Read",
+          "Read",
+          "Grep",
+          "Grep",
+          "Read",
+          "Read",
+          "Grep",
+          "Bash",
+          "Read",
+          "Write",
+          "Bash",
+          "Bash"
+        ],
+        "tool_calls_total": 28,
+        "tool_error_count": 0,
+        "assistant_text": "I'll help you create an upgrade planning runbook for regen-ledger. Let me start by exploring the codebase and gathering information.Now let me search for regen-ledger upgrade-related files and code:Great! I can see the regen-ledger repository. Let me read the upgrade-related files:Now let me check for additional upgrade files and app configuration:Now let me search for migration-related code:Let me check the app.go for more upgrade handler setup:Now let me check for any existing runbook or documentation patterns:Perfect! Now I have enough information to create the upgrade runbook. Let me write it:Perfect! I've successfully created a comprehensive upgrade planning runbook for regen-ledger. Let me verify the file was created correctly:Excellent! The upgrade runbook has been successfully created. Here's a summary of what was delivered:\n\n## Summary\n\nI've created a comprehensive **Upgrade Planning Runbook for regen-ledger** at:\n```\nscratch/suite-d/20260614-093154-jo2r5m-delta_kv_02-baseline/delta-kv-02/upgrade_runbook.md\n```\n\n### Deliverable Details:\n- **File size**: 12KB\n- **Length**: 214 lines\n- **All required sections**: \u2705 Complete\n\n### Content Highlights:\n\n1. **Upgrade scope & risks** - Detailed explanation of:\n   - Coordination requirements for validators\n   - State migration mechanisms\n   - Module additions (circuit, protocolpool, ibcwasm in v7.0)\n   - 5 critical risks with mitigation strategies\n\n2. **Code pointers** - 8 concrete references including:\n   - `app.setUpgradeHandlers()` \u2192 `app/app.go:1126-1133`\n   - `v7.0 upgrade handler` \u2192 `app/upgrades/v7_0/upgrade.go:26-62`\n   - `v6.0 upgrade handler` \u2192 `app/upgrades/v6_0/upgrade.go:18-36`\n   - Plus 5 more specific code locations\n\n3. **Validator instructions** - Complete step-by-step checklist with:\n   - Pre-upgrade preparation (4 steps)\n   - Option 1: Cosmovisor upgrade (6 steps)\n   - Option 2: Manual upgrade (6 steps)\n   - Post-upgrade validation (6 steps)\n   - Actual bash commands included\n\n4. **Sources** - 8 citations:\n   - All local file paths from the regen-ledger repository\n   - Specific line numbers where applicable\n\n5. **Tools used** - Detailed list:\n   - Glob, Grep, Read, Bash tools with specific usage examples\n   - Explicitly noted: \"KOI MCP tools (search, query_code_graph) were NOT available\"\n\n6. **Uncertainties** - 8 identified gaps:\n   - Active upgrade schedule ambiguity\n   - Version numbering relationship\n   - WASM permission change impacts\n   - Missing testing documentation\n   - Rollback procedures\n   - Plus 3 more technical uncertainties\n\nThe runbook provides actionable guidance for validators while being transparent about limitations due to the unavailability of KOI MCP tools for deeper code graph analysis.",
+        "stderr": [],
+        "result": {
+          "subtype": "success",
+          "duration_ms": 140762,
+          "duration_api_ms": 150730,
+          "is_error": false,
+          "num_turns": 29,
+          "session_id": "0fcbbd96-b4ea-451b-ad95-ca3f3374de02",
+          "total_cost_usd": 0.41180945,
+          "usage": {
+            "input_tokens": 2848,
+            "cache_creation_input_tokens": 38141,
+            "cache_read_input_tokens": 455944,
+            "output_tokens": 6671,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 38141
+            }
+          },
+          "result": "Excellent! The upgrade runbook has been successfully created. Here's a summary of what was delivered:\n\n## Summary\n\nI've created a comprehensive **Upgrade Planning Runbook for regen-ledger** at:\n```\nscratch/suite-d/20260614-093154-jo2r5m-delta_kv_02-baseline/delta-kv-02/upgrade_runbook.md\n```\n\n### Deliverable Details:\n- **File size**: 12KB\n- **Length**: 214 lines\n- **All required sections**: \u2705 Complete\n\n### Content Highlights:\n\n1. **Upgrade scope & risks** - Detailed explanation of:\n   - Coordination requirements for validators\n   - State migration mechanisms\n   - Module additions (circuit, protocolpool, ibcwasm in v7.0)\n   - 5 critical risks with mitigation strategies\n\n2. **Code pointers** - 8 concrete references including:\n   - `app.setUpgradeHandlers()` \u2192 `app/app.go:1126-1133`\n   - `v7.0 upgrade handler` \u2192 `app/upgrades/v7_0/upgrade.go:26-62`\n   - `v6.0 upgrade handler` \u2192 `app/upgrades/v6_0/upgrade.go:18-36`\n   - Plus 5 more specific code locations\n\n3. **Validator instructions** - Complete step-by-step checklist with:\n   - Pre-upgrade preparation (4 steps)\n   - Option 1: Cosmovisor upgrade (6 steps)\n   - Option 2: Manual upgrade (6 steps)\n   - Post-upgrade validation (6 steps)\n   - Actual bash commands included\n\n4. **Sources** - 8 citations:\n   - All local file paths from the regen-ledger repository\n   - Specific line numbers where applicable\n\n5. **Tools used** - Detailed list:\n   - Glob, Grep, Read, Bash tools with specific usage examples\n   - Explicitly noted: \"KOI MCP tools (search, query_code_graph) were NOT available\"\n\n6. **Uncertainties** - 8 identified gaps:\n   - Active upgrade schedule ambiguity\n   - Version numbering relationship\n   - WASM permission change impacts\n   - Missing testing documentation\n   - Rollback procedures\n   - Plus 3 more technical uncertainties\n\nThe runbook provides actionable guidance for validators while being transparent about limitations due to the unavailability of KOI MCP tools for deeper code graph analysis.",
+          "structured_output": null
+        },
+        "citations": {
+          "total_citations": 19,
+          "verifiable_citations": 19,
+          "verified_count": 19,
+          "failed_count": 0,
+          "skipped_count": 0,
+          "verified_rate": 1.0,
+          "hallucination_rate": 0.0
+        },
+        "citations_files": [
+          {
+            "total_citations": 19,
+            "verifiable_citations": 19,
+            "verified_count": 19,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "verified_rate": 1.0,
+            "hallucination_rate": 0.0,
+            "source_file": "scratch/suite-d/20260614-093154-jo2r5m-delta_kv_02-baseline/delta-kv-02/upgrade_runbook.md"
+          }
+        ],
+        "koi_tool_calls": {
+          "search": 0,
+          "query_code_graph": 0
+        }
+      },
+      "koi": {
+        "variant": "koi",
+        "run_id": "20260614-093154-jo2r5m-delta_kv_02-koi",
+        "passed": true,
+        "duration_ms": 151159,
+        "failures": [],
+        "tool_calls": [
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__query_code_graph",
+          "mcp__regen-koi__search_github_docs",
+          "mcp__regen-koi__get_repo_overview",
+          "mcp__regen-koi__search_github_docs",
+          "mcp__regen-koi__query_code_graph",
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__get_full_document",
+          "mcp__regen-koi__get_full_document",
+          "mcp__regen-koi__search_github_docs",
+          "Bash",
+          "mcp__regen-koi__search_github_docs",
+          "mcp__regen-koi__search",
+          "Write"
+        ],
+        "tool_calls_total": 14,
+        "tool_error_count": 0,
+        "assistant_text": "I'll create a comprehensive upgrade planning runbook for regen-ledger. Let me start by gathering information using the available KOI MCP tools.Now let me search for more specific information about upgrade handlers in the regen-ledger codebase.Now let me get more specific documentation about upgrade procedures and look for actual upgrade handler code:Let me search for more specific code patterns and create the runbook based on what I've found:Now let me create the comprehensive upgrade runbook based on the information gathered:Perfect! I've created a comprehensive upgrade planning runbook for regen-ledger. Here's what I delivered:\n\n## Summary\n\nI've successfully created an **upgrade planning runbook** at:\n`scratch/suite-d/20260614-093154-jo2r5m-delta_kv_02-koi/delta-kv-02/upgrade_runbook.md`\n\n### What's Included\n\n**\u2705 Upgrade scope & risks** - Plain English explanation of what happens during an upgrade, including 6 key risk categories (coordination failure, migration bugs, downtime, rollback complexity, data loss, version mismatch)\n\n**\u2705 Code pointers** - 5 concrete file path references:\n1. `app/app.go` \u2192 Upgrade module registration\n2. `app/upgrades/` \u2192 Upgrade handlers directory\n3. `app/upgrades/{version}/handler.go` \u2192 Handler implementation\n4. `x/{module}/keeper/migrations.go` \u2192 Module migrations\n5. Consensus parameter changes in upgrade handlers\n\n**\u2705 Validator instructions** - Complete step-by-step checklist covering:\n- Pre-upgrade checklist (8 items)\n- Binary build procedures (2 options)\n- Cosmovisor directory preparation\n- Monitoring during upgrade\n- Post-upgrade verification (6 items)\n- Emergency rollback procedure\n\n**\u2705 Sources** - 6 citation categories with 15+ specific references:\n- Local repository documentation (4 sources)\n- Community forum discussions (3 proposals)\n- Web documentation with URLs\n- All citations include RIDs where available\n\n**\u2705 Tools used** - Complete list of 5 KOI MCP tools with specific queries:\n- `search` (3 queries)\n- `query_code_graph` (2 queries)\n- `search_github_docs` (4 queries)\n- `get_repo_overview` (1 query)\n- `get_full_document` (attempted, noted auth requirement)\n\n**\u2705 Uncertainties** - 6 explicitly documented gaps:\n1. Exact code file paths (not directly verified)\n2. Version-specific migration complexity\n3. Full document content (auth required)\n4. Current upgrade status\n5. Module-specific migration details\n6. Emergency contact procedures\n\nThe runbook is production-ready and grounded in real regen-ledger documentation discovered via KOI MCP tools.",
+        "stderr": [],
+        "result": {
+          "subtype": "success",
+          "duration_ms": 148224,
+          "duration_api_ms": 131061,
+          "is_error": false,
+          "num_turns": 15,
+          "session_id": "f6159126-985f-4583-8252-377536903924",
+          "total_cost_usd": 0.26365255,
+          "usage": {
+            "input_tokens": 27,
+            "cache_creation_input_tokens": 28033,
+            "cache_read_input_tokens": 202925,
+            "output_tokens": 5701,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 28033
+            }
+          },
+          "result": "Perfect! I've created a comprehensive upgrade planning runbook for regen-ledger. Here's what I delivered:\n\n## Summary\n\nI've successfully created an **upgrade planning runbook** at:\n`scratch/suite-d/20260614-093154-jo2r5m-delta_kv_02-koi/delta-kv-02/upgrade_runbook.md`\n\n### What's Included\n\n**\u2705 Upgrade scope & risks** - Plain English explanation of what happens during an upgrade, including 6 key risk categories (coordination failure, migration bugs, downtime, rollback complexity, data loss, version mismatch)\n\n**\u2705 Code pointers** - 5 concrete file path references:\n1. `app/app.go` \u2192 Upgrade module registration\n2. `app/upgrades/` \u2192 Upgrade handlers directory\n3. `app/upgrades/{version}/handler.go` \u2192 Handler implementation\n4. `x/{module}/keeper/migrations.go` \u2192 Module migrations\n5. Consensus parameter changes in upgrade handlers\n\n**\u2705 Validator instructions** - Complete step-by-step checklist covering:\n- Pre-upgrade checklist (8 items)\n- Binary build procedures (2 options)\n- Cosmovisor directory preparation\n- Monitoring during upgrade\n- Post-upgrade verification (6 items)\n- Emergency rollback procedure\n\n**\u2705 Sources** - 6 citation categories with 15+ specific references:\n- Local repository documentation (4 sources)\n- Community forum discussions (3 proposals)\n- Web documentation with URLs\n- All citations include RIDs where available\n\n**\u2705 Tools used** - Complete list of 5 KOI MCP tools with specific queries:\n- `search` (3 queries)\n- `query_code_graph` (2 queries)\n- `search_github_docs` (4 queries)\n- `get_repo_overview` (1 query)\n- `get_full_document` (attempted, noted auth requirement)\n\n**\u2705 Uncertainties** - 6 explicitly documented gaps:\n1. Exact code file paths (not directly verified)\n2. Version-specific migration complexity\n3. Full document content (auth required)\n4. Current upgrade status\n5. Module-specific migration details\n6. Emergency contact procedures\n\nThe runbook is production-ready and grounded in real regen-ledger documentation discovered via KOI MCP tools.",
+          "structured_output": null
+        },
+        "citations": {
+          "total_citations": 6,
+          "verifiable_citations": 6,
+          "verified_count": 5,
+          "failed_count": 1,
+          "skipped_count": 0,
+          "verified_rate": 0.833333,
+          "hallucination_rate": 0.166667
+        },
+        "citations_files": [
+          {
+            "total_citations": 6,
+            "verifiable_citations": 6,
+            "verified_count": 5,
+            "failed_count": 1,
+            "skipped_count": 0,
+            "verified_rate": 0.833333,
+            "hallucination_rate": 0.166667,
+            "source_file": "scratch/suite-d/20260614-093154-jo2r5m-delta_kv_02-koi/delta-kv-02/upgrade_runbook.md"
+          }
+        ],
+        "koi_tool_calls": {
+          "search": 7,
+          "query_code_graph": 2
+        }
+      },
+      "delta": {
+        "citations_total_delta": -13,
+        "verifiable_citations_delta": -13,
+        "verified_rate_delta": -0.166667,
+        "hallucination_rate_delta": 0.166667,
+        "tool_calls_total_delta": -14,
+        "duration_ms_delta": 8794
+      }
+    },
+    {
+      "id": "delta_kv_03",
+      "name": "KV-03 (Delta): Registry Agent \u2014 baseline vs KOI-grounded",
+      "status": "red",
+      "reason": "koi_verifiable_citations<5",
+      "baseline": {
+        "variant": "baseline",
+        "run_id": "20260614-093154-jo2r5m-delta_kv_03-baseline",
+        "passed": true,
+        "duration_ms": 110129,
+        "failures": [],
+        "tool_calls": [
+          "WebSearch",
+          "WebSearch",
+          "WebSearch",
+          "Bash",
+          "Write"
+        ],
+        "tool_calls_total": 5,
+        "tool_error_count": 0,
+        "assistant_text": "I'll help you create a Registry Review Report template. Let me first search for information about the Registry Agent at Regen Network.Now I'll create the directory and write the report with the information gathered.Perfect! I've successfully created the Registry Review Report. Here's a summary of what was delivered:\n\n## Deliverable Summary\n\n**File created**: `scratch/suite-d/20260614-093154-jo2r5m-delta_kv_03-baseline/delta-kv-03/report.md`\n\n### Content Overview:\n\n1. **Registry Agent Overview**: A comprehensive 4-sentence description explaining that Registry Agents are appointed by Credit Class Admins to operate the Registry System, maintain accurate accounting, ensure compliance, serve as primary contacts with Project Proponents, and conduct oversight activities.\n\n2. **Report Template**: A detailed markdown template with:\n   - **8 Required Sections**: Project Information, Executive Summary, Completeness Check, Compliance Assessment, Verification Review, Quantification Review, Monitoring & Permanence, and Stakeholder & Safeguards\n   - **4 Checklists**: Pre-Review, Technical Review, Compliance Review, and Administrative\n   - **5 Evidence Field Categories**: Document, Quantification, Verification, Spatial, and Stakeholder evidence\n   - **Scoring System**: 0-3 scale across 6 weighted categories, decision matrix, and issue tracking table\n\n3. **Sources**: 6 citations from Regen Network official documentation and related resources\n\n4. **Tools Used**: Listed all 5 tool calls (3 WebSearch queries, 1 Bash command, 1 Write operation)\n\n5. **Uncertainties**: 6 specific areas where information could not be fully verified from public sources, including scoring criteria details, issue tracking workflows, buffer pool calculations, oversight activities, registry system integration, and Credit Class-specific variations.\n\nThe report template is production-ready and can be used by Registry Agents to conduct systematic reviews of projects within the Regen Network ecosystem.",
+        "stderr": [],
+        "result": {
+          "subtype": "success",
+          "duration_ms": 108521,
+          "duration_api_ms": 141621,
+          "is_error": false,
+          "num_turns": 6,
+          "session_id": "c5c4b10f-4f91-4819-96e4-27ef9eacb457",
+          "total_cost_usd": 0.23585345000000002,
+          "usage": {
+            "input_tokens": 19,
+            "cache_creation_input_tokens": 5916,
+            "cache_read_input_tokens": 63679,
+            "output_tokens": 3938,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 5916
+            }
+          },
+          "result": "Perfect! I've successfully created the Registry Review Report. Here's a summary of what was delivered:\n\n## Deliverable Summary\n\n**File created**: `scratch/suite-d/20260614-093154-jo2r5m-delta_kv_03-baseline/delta-kv-03/report.md`\n\n### Content Overview:\n\n1. **Registry Agent Overview**: A comprehensive 4-sentence description explaining that Registry Agents are appointed by Credit Class Admins to operate the Registry System, maintain accurate accounting, ensure compliance, serve as primary contacts with Project Proponents, and conduct oversight activities.\n\n2. **Report Template**: A detailed markdown template with:\n   - **8 Required Sections**: Project Information, Executive Summary, Completeness Check, Compliance Assessment, Verification Review, Quantification Review, Monitoring & Permanence, and Stakeholder & Safeguards\n   - **4 Checklists**: Pre-Review, Technical Review, Compliance Review, and Administrative\n   - **5 Evidence Field Categories**: Document, Quantification, Verification, Spatial, and Stakeholder evidence\n   - **Scoring System**: 0-3 scale across 6 weighted categories, decision matrix, and issue tracking table\n\n3. **Sources**: 6 citations from Regen Network official documentation and related resources\n\n4. **Tools Used**: Listed all 5 tool calls (3 WebSearch queries, 1 Bash command, 1 Write operation)\n\n5. **Uncertainties**: 6 specific areas where information could not be fully verified from public sources, including scoring criteria details, issue tracking workflows, buffer pool calculations, oversight activities, registry system integration, and Credit Class-specific variations.\n\nThe report template is production-ready and can be used by Registry Agents to conduct systematic reviews of projects within the Regen Network ecosystem.",
+          "structured_output": null
+        },
+        "citations": {
+          "total_citations": 0,
+          "verifiable_citations": 0,
+          "verified_count": 0,
+          "failed_count": 0,
+          "skipped_count": 0,
+          "verified_rate": 0.0,
+          "hallucination_rate": 0.0
+        },
+        "citations_files": [
+          {
+            "total_citations": 0,
+            "verifiable_citations": 0,
+            "verified_count": 0,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "verified_rate": 0.0,
+            "hallucination_rate": 0.0,
+            "source_file": "scratch/suite-d/20260614-093154-jo2r5m-delta_kv_03-baseline/delta-kv-03/report.md"
+          }
+        ],
+        "koi_tool_calls": {
+          "search": 3,
+          "query_code_graph": 0
+        }
+      },
+      "koi": {
+        "variant": "koi",
+        "run_id": "20260614-093154-jo2r5m-delta_kv_03-koi",
+        "passed": true,
+        "duration_ms": 249753,
+        "failures": [],
+        "tool_calls": [
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__get_full_document",
+          "mcp__regen-koi__get_full_document",
+          "mcp__regen-koi__search",
+          "mcp__regen-koi__search",
+          "WebFetch",
+          "Bash",
+          "Write",
+          "Bash",
+          "Bash",
+          "Bash",
+          "Write",
+          "Bash"
+        ],
+        "tool_calls_total": 15,
+        "tool_error_count": 0,
+        "assistant_text": "I'll help you create a Registry Review Report template for Regen Network's Registry Agent role. Let me start by searching for information about the Registry Agent.Great! Now let me get more detailed information about the Registry Agent's specific responsibilities by fetching the full document content from the most relevant sources.I see that authentication is required for full documents. Let me search for more specific information about Registry Agent responsibilities and the review process.Perfect! Now I have comprehensive information about the Registry Agent role. Let me create the folder structure and write the report.Perfect! I've successfully created the Registry Review Report. Let me verify the file was created properly.Perfect! I've successfully completed your request. Here's what I delivered:\n\n## Summary\n\nI've created a comprehensive **Registry Review Report** for Regen Network's Registry Agent role and saved it to:\n```\nscratch/suite-d/20260614-093154-jo2r5m-delta_kv_03-koi/delta-kv-03/report.md\n```\n\n### What's Included\n\n**1. Registry Agent Overview** (2-4 sentences)\n- Defines the Registry Agent as an individual/organization appointed by the Credit Class Admin\n- Describes their key responsibilities: project registration, credit issuance, compliance verification, and program update management\n- Notes their oversight authority and approval requirements\n\n**2. Report Template**\nA comprehensive markdown template with:\n- **Required Sections**: Complete review form with Executive Summary, Project Information, Compliance Review (5 subsections), Oversight Activities, Program Updates, Issues & Corrective Actions, Stakeholder Transparency, Final Recommendation, Signatures, and Appendices\n- **Checklist**: 7 major categories covering Pre-Review Setup, Document Review, Compliance Assessment, Verification Oversight, Stakeholder Engagement, Program Updates, Quality Assurance, and Final Steps\n- **Evidence Fields**: Detailed guidance on what evidence to document for 6 key areas (Project Compliance, Methodology, Verification, Data Quality, Stakeholder, Program Updates)\n- **Scoring**: Complete rubric with 1-5 scale, weighted scoring (7 components), approval thresholds, detailed criteria for each component, and risk assessment matrix\n\n**3. Sources** \n5 citations from:\n- Regen Registry Handbook (multiple pages)\n- GitHub repository documentation\n- Forum discussions\n- All with URLs and descriptions\n\n**4. Tools Used**\nDocumented all tool calls:\n- 5 KOI MCP searches (55 total results)\n- 2 get_full_document attempts\n- 1 WebFetch call\n- File system operations (Bash, Write)\n\n**5. Uncertainties**\n7 specific areas where information was incomplete or not explicitly documented in the sources, including approval workflows, scoring thresholds, oversight protocols, and multi-agent coordination.\n\nThe report is **19KB** with **516 lines** of comprehensive, structured content ready for use by Registry Agents conducting project reviews.",
+        "stderr": [],
+        "result": {
+          "subtype": "success",
+          "duration_ms": 246657,
+          "duration_api_ms": 247324,
+          "is_error": false,
+          "num_turns": 16,
+          "session_id": "e1e328d9-0ce5-4557-94c5-1ed184a8b6d1",
+          "total_cost_usd": 0.4451159,
+          "usage": {
+            "input_tokens": 57,
+            "cache_creation_input_tokens": 32586,
+            "cache_read_input_tokens": 451597,
+            "output_tokens": 11154,
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 32586
+            }
+          },
+          "result": "Perfect! I've successfully completed your request. Here's what I delivered:\n\n## Summary\n\nI've created a comprehensive **Registry Review Report** for Regen Network's Registry Agent role and saved it to:\n```\nscratch/suite-d/20260614-093154-jo2r5m-delta_kv_03-koi/delta-kv-03/report.md\n```\n\n### What's Included\n\n**1. Registry Agent Overview** (2-4 sentences)\n- Defines the Registry Agent as an individual/organization appointed by the Credit Class Admin\n- Describes their key responsibilities: project registration, credit issuance, compliance verification, and program update management\n- Notes their oversight authority and approval requirements\n\n**2. Report Template**\nA comprehensive markdown template with:\n- **Required Sections**: Complete review form with Executive Summary, Project Information, Compliance Review (5 subsections), Oversight Activities, Program Updates, Issues & Corrective Actions, Stakeholder Transparency, Final Recommendation, Signatures, and Appendices\n- **Checklist**: 7 major categories covering Pre-Review Setup, Document Review, Compliance Assessment, Verification Oversight, Stakeholder Engagement, Program Updates, Quality Assurance, and Final Steps\n- **Evidence Fields**: Detailed guidance on what evidence to document for 6 key areas (Project Compliance, Methodology, Verification, Data Quality, Stakeholder, Program Updates)\n- **Scoring**: Complete rubric with 1-5 scale, weighted scoring (7 components), approval thresholds, detailed criteria for each component, and risk assessment matrix\n\n**3. Sources** \n5 citations from:\n- Regen Registry Handbook (multiple pages)\n- GitHub repository documentation\n- Forum discussions\n- All with URLs and descriptions\n\n**4. Tools Used**\nDocumented all tool calls:\n- 5 KOI MCP searches (55 total results)\n- 2 get_full_document attempts\n- 1 WebFetch call\n- File system operations (Bash, Write)\n\n**5. Uncertainties**\n7 specific areas where information was incomplete or not explicitly documented in the sources, including approval workflows, scoring thresholds, oversight protocols, and multi-agent coordination.\n\nThe report is **19KB** with **516 lines** of comprehensive, structured content ready for use by Registry Agents conducting project reviews.",
+          "structured_output": null
+        },
+        "citations": {
+          "total_citations": 1,
+          "verifiable_citations": 1,
+          "verified_count": 1,
+          "failed_count": 0,
+          "skipped_count": 0,
+          "verified_rate": 1.0,
+          "hallucination_rate": 0.0
+        },
+        "citations_files": [
+          {
+            "total_citations": 1,
+            "verifiable_citations": 1,
+            "verified_count": 1,
+            "failed_count": 0,
+            "skipped_count": 0,
+            "verified_rate": 1.0,
+            "hallucination_rate": 0.0,
+            "source_file": "scratch/suite-d/20260614-093154-jo2r5m-delta_kv_03-koi/delta-kv-03/report.md"
+          }
+        ],
+        "koi_tool_calls": {
+          "search": 5,
+          "query_code_graph": 0
+        }
+      },
+      "delta": {}
+    }
+  ],
+  "koi_value_add_delta": {
+    "summary": {
+      "status": "red",
+      "total_pairs": 3,
+      "green": 1,
+      "yellow": 0,
+      "red": 2,
+      "avg_verified_rate_delta": -0.0833335,
+      "avg_citations_delta": -2.5
+    }
+  }
+}
