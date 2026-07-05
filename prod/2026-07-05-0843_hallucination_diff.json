@@ -1,0 +1,31 @@
+{
+  "suite": "hallucination",
+  "generated_at": "2026-07-05T08:43:38.440267+00:00",
+  "current_path": "citation_verification.json",
+  "baseline_path": "reports/baselines/prod/hallucination.json",
+  "min_citations": 10,
+  "threshold": 0.2,
+  "delta_yellow": 0.05,
+  "delta_red": 0.1,
+  "status": "insufficient_data",
+  "reason": "total_citations<10 (current_total=0)",
+  "baseline": {
+    "generated_at": "2026-01-08T00:00:00Z",
+    "source_file": "",
+    "total_citations": 0,
+    "verified_count": 0,
+    "failed_count": 0,
+    "skipped_count": 0,
+    "hallucination_rate": 0.0
+  },
+  "current": {
+    "generated_at": "2026-07-05T08:43:38.440191+00:00",
+    "source_file": "docs/test-results/2026-07-05-0842-suite-d.md",
+    "total_citations": 0,
+    "verified_count": 0,
+    "failed_count": 0,
+    "skipped_count": 0,
+    "hallucination_rate": 0.0
+  },
+  "delta": 0.0
+}
