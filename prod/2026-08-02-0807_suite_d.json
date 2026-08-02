@@ -1,0 +1,90 @@
+{
+  "suite": "suite_d",
+  "env": "prod",
+  "generated_at": "2026-08-02T08:07:54.045798+00:00",
+  "run_id": "20260802-080754-cuj3ol",
+  "model": "sonnet",
+  "koi_api_endpoint": "https://regen.gaiaai.xyz/api/koi",
+  "scenarios": [
+    {
+      "id": "sd_vc_01",
+      "name": "VC-01 (Suite D): Python CLI + unittest",
+      "run_id": "20260802-080754-cuj3ol-sd_vc_01",
+      "passed": false,
+      "duration_ms": 4361,
+      "failures": [
+        "sdk_error: Command failed with exit code 1 (exit code: 1)\nError output: Check stderr output for details"
+      ],
+      "tool_calls": [],
+      "tool_error_count": 0,
+      "assistant_text": "",
+      "stderr": [],
+      "result": {}
+    },
+    {
+      "id": "sd_ca_01",
+      "name": "CA-01 (Suite D): Basket token helper (KOI-grounded)",
+      "run_id": "20260802-080754-cuj3ol-sd_ca_01",
+      "passed": false,
+      "duration_ms": 8256,
+      "failures": [
+        "sdk_error: Command failed with exit code 1 (exit code: 1)\nError output: Check stderr output for details"
+      ],
+      "tool_calls": [],
+      "tool_error_count": 0,
+      "assistant_text": "",
+      "stderr": [],
+      "result": {}
+    },
+    {
+      "id": "sd_nu_02",
+      "name": "NU-02 (Suite D): Upgrade Planning from Docs",
+      "run_id": "20260802-080754-cuj3ol-sd_nu_02",
+      "passed": false,
+      "duration_ms": 4762,
+      "failures": [
+        "sdk_error: Command failed with exit code 1 (exit code: 1)\nError output: Check stderr output for details"
+      ],
+      "tool_calls": [],
+      "tool_error_count": 0,
+      "assistant_text": "",
+      "stderr": [],
+      "result": {}
+    },
+    {
+      "id": "sd_vc_02",
+      "name": "VC-02 (Suite D): query_code_graph contract sanity",
+      "run_id": "20260802-080754-cuj3ol-sd_vc_02",
+      "passed": false,
+      "duration_ms": 4765,
+      "failures": [
+        "sdk_error: Command failed with exit code 1 (exit code: 1)\nError output: Check stderr output for details"
+      ],
+      "tool_calls": [],
+      "tool_error_count": 0,
+      "assistant_text": "",
+      "stderr": [],
+      "result": {}
+    },
+    {
+      "id": "sd_ca_02",
+      "name": "CA-02 (Suite D): Registry Agent report template",
+      "run_id": "20260802-080754-cuj3ol-sd_ca_02",
+      "passed": false,
+      "duration_ms": 4550,
+      "failures": [
+        "sdk_error: Command failed with exit code 1 (exit code: 1)\nError output: Check stderr output for details"
+      ],
+      "tool_calls": [],
+      "tool_error_count": 0,
+      "assistant_text": "",
+      "stderr": [],
+      "result": {}
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 0,
+    "failed": 5
+  }
+}
